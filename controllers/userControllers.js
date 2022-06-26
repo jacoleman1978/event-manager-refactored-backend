@@ -87,4 +87,28 @@ export default class UserController {
             res.status(500).json({error: error.message});
         }
     }
+
+    // Verify unique userName entered during Signup
+    static async VerifyUniqueUserName(req, res) {
+        const body = req.body;
+        let isUniqueUserName = false;
+
+        try {
+            // Determine if userName already exists in database
+            let userNameExists = await User.findOne({userName: body.userName});
+
+            if (userNameExists) {
+                isUniqueUserName = false;
+            } else {
+                isUniqueUserName = true;
+            }
+
+            // Return results to frontend
+            res.json({
+                isUniqueUserName: isUniqueUserName
+            });
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
 }
