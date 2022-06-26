@@ -43,4 +43,48 @@ export default class UserController {
             res.status(500).json({error: error.message});
         }
     }
+
+    // Create new user via POST
+    static async Signup(req, res) {
+        const body = req.body;
+
+        try {
+            // Generate salt to hash password
+            const salt = await genSalt(10);
+
+            // Hash the user's password
+            const hashedPassword = await hash(body.password, salt);
+            
+            // Create new mongoose document from user data
+            const user = new User({
+                firstName: body.firstName,
+                lastName: body.lastName,
+                userName: body.userName,
+                hashedPassword: hashedPassword,
+                tags: [],
+                groups: [],
+                settings: {
+                    isDefault: true,
+                    id: ""
+                },
+                groupInvites: {
+                    didReceive: false,
+                    inviteList: []
+                },
+                dateCreated: Date(),
+                lastUpdated: Date()
+            });
+
+            // Save the new document
+            user.save().then(doc => {
+                req.session = null;
+                req.session = user;
+                req.session.userId = user._id;
+                res.status(201).json({message: "Successfully created user", userId: doc._id});
+            });
+            
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
 }
