@@ -39,6 +39,7 @@ export default class UserController {
                     userName: ""
                 });
             }
+
         } catch(error) {
             res.status(500).json({error: error.message});
         }
@@ -107,8 +108,21 @@ export default class UserController {
             res.json({
                 isUniqueUserName: isUniqueUserName
             });
+
         } catch(error) {
             res.status(500).json({error: error.message});
+        }
+    }
+
+    // Check session
+    static async CheckSession(req, res) {
+        try {
+            // Search for userId in database
+            const user = await User.findOne({_id: req.session._id});
+            res.json(user);
+            
+        } catch(error) {
+            res.json(null);
         }
     }
 }
