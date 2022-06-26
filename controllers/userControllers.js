@@ -120,9 +120,15 @@ export default class UserController {
             // Search for userId in database
             const user = await User.findOne({_id: req.session._id});
             res.json(user);
-            
+
         } catch(error) {
             res.json(null);
         }
+    }
+
+    // Logout and remove session
+    static async Logout(req, res) {
+        req.session = null;
+        res.json({message: "Logged out"});
     }
 }
