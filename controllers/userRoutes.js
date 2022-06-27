@@ -12,7 +12,7 @@ userRouter.route('/login').post(UserController.Login);
 userRouter.route('/signup').post(UserController.Signup);
 
 // Route to verify unique username
-userRouter.route('signup/verify').post(UserController.VerifyUniqueUserName);
+userRouter.route('/signup/verify').post(UserController.VerifyUniqueUserName);
 
 // Route for verifying session
 userRouter.route('/session').get(UserController.CheckSession);

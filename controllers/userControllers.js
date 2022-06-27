@@ -14,7 +14,7 @@ export default class UserController {
             // Check whether there is a user found or not
             if (user) {
                 // Check user password with hashed password in database
-                const isValidPassword = await compare(body.password, user.password);
+                const isValidPassword = await compare(body.password, user.hashedPassword);
 
                 if (isValidPassword) {
                     req.session = user;
@@ -63,14 +63,14 @@ export default class UserController {
                 userName: body.userName,
                 hashedPassword: hashedPassword,
                 tags: [],
-                groups: [],
+                //groups: [],
                 settings: {
                     isDefault: true,
-                    id: ""
+                    //id: ""
                 },
                 groupInvites: {
                     didReceive: false,
-                    inviteList: []
+                    //inviteList: []
                 },
                 dateCreated: Date(),
                 lastUpdated: Date()

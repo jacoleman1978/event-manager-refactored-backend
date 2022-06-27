@@ -27,7 +27,7 @@ app.use(json());
 app.use('/auth', userRouter);
 
 app.use('*', (_req, res) => {
-    res.status(404).send("Sorry! The page requested was not fount.");
+    res.status(404).send("Sorry! The page requested was not found.");
 });
 
 export default app;
