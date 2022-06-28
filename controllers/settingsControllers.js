@@ -3,7 +3,7 @@ import User from '../models/userSchema.js';
 
 export default class SettingsController {
     // Get settings info via GET
-    static async getSettings(req, res) {
+    static async GetSettings(req, res) {
         try {
             const settingsId = req.params.settingsId;
 
@@ -20,9 +20,9 @@ export default class SettingsController {
     }
     
     // Create new settings file
-    static async customizeSettings(req, res) {
+    static async CustomizeSettings(req, res) {
         try {
-            const oldSettingsId = req.session.settingsId;
+            const oldSettingsId = req.params.settingsId;
             const newSettings = req.body.settings;
 
             // Create new mongoose document for default settings
