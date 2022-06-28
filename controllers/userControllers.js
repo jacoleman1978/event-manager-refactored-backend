@@ -10,7 +10,7 @@ export default class UserController {
 
         try {
             // Search for userName in database
-            const user = await User.findOne({userName: body.userName});
+            const user = await User.findOne({userName: body.userName}).populate('groups');
 
             // Check whether there is a user found or not
             if (user) {
@@ -115,7 +115,7 @@ export default class UserController {
                 req.session = null;
                 req.session = doc;
                 req.session.userId = doc._id;
-                res.status(201).json({message: "Successfully created user", userId: doc._id, didSignup: true});
+                res.status(201).json({message: "Successfully created user", userId: doc._id, didSignup: true, settings: settingsDoc});
             });
             
         } catch(error) {
