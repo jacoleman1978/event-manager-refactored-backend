@@ -8,12 +8,9 @@ const UserSchema = new Schema({
     hashedPassword: {type: String, unique: true, required: true},
     tags: [{type: String}],
     groups: [{type: Schema.Types.ObjectId, ref: 'Group'}],
-    settings: {
-        isDefault: {type: Boolean, required: true},
-        id: {type: Schema.Types.ObjectId, ref: 'Settings'}
-    },
+    settingsId: {type: Schema.Types.ObjectId, ref: 'Settings'},
     groupInvites: {
-        didReceive: {type: Boolean, required: true},
+        didReceive: {type: Boolean, required: true, default: false},
         inviteList: [{
             fromUserId: {type: Schema.Types.ObjectId, ref: 'User'},
             groupId: {type: Schema.Types.ObjectId, ref: 'Group'} 

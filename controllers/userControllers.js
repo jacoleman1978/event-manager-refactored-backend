@@ -1,4 +1,5 @@
 import User from '../models/userSchema.js';
+import Settings from '../models/settingsSchema.js';
 import { compare, genSalt, hash } from 'bcrypt';
 
 export default class UserController {
@@ -56,36 +57,69 @@ export default class UserController {
             // Hash the user's password
             const hashedPassword = await hash(body.password, salt);
             
-            // Create new mongoose document from user data
-            const user = new User({
+            // Create newUser object
+            let newUser = {
                 firstName: body.firstName,
                 lastName: body.lastName,
                 userName: body.userName,
                 hashedPassword: hashedPassword,
                 tags: [],
-                //groups: [],
-                settings: {
-                    isDefault: true,
-                    //id: ""
-                },
                 groupInvites: {
                     didReceive: false,
-                    //inviteList: []
                 },
                 dateCreated: Date(),
                 lastUpdated: Date()
-            });
+            };
 
-            // Save the new document
-            user.save().then(doc => {
+            // Create new user document via mongoose
+            let userDoc = await User.create(newUser);
+
+            // Create newSettings default object
+            let newSettings = {
+                views: {
+                    view: "Events",
+                    subView: "By List",
+                    startOfWeek: "Sunday",
+                    expandedDaysByList: "Today",
+                    defaultUser: userDoc._id
+                },
+                task: {
+                    isIt: false,
+                    priority: "Medium"
+                },
+                allDay: {
+                    isIt: true,
+                    startDate: "Today",
+                    endDate: "Today",
+                    startTime: "Now",
+                    endTime: "+1 Hour"
+                },
+                recurring: {
+                    isIt: false,
+                    everyNum: 1,
+                    everyUnit: "Day(s)",
+                    startDate: "Today",
+                    endDate: "+1 Week"
+                },
+                peopleAssigned: [userDoc._id]
+            }
+
+            // Create new setting document via mongoose
+            const settingsDoc = await Settings.create(newSettings);
+
+            // Link the settingId to the user document
+            userDoc["settingsId"] = settingsDoc._id;
+
+            // Save the new user document and set the session
+            userDoc.save().then(doc => {
                 req.session = null;
-                req.session = user;
-                req.session.userId = user._id;
-                res.status(201).json({message: "Successfully created user", userId: doc._id});
+                req.session = doc;
+                req.session.userId = doc._id;
+                res.status(201).json({message: "Successfully created user", userId: doc._id, didSignup: true});
             });
             
         } catch(error) {
-            res.status(500).json({error: error.message});
+            res.status(500).json({error: error.message, didSignup: false});
         }
     }
 
