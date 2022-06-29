@@ -165,4 +165,51 @@ export default class UserController {
         req.session = null;
         res.json({message: "Logged out"});
     }
+
+    // Search for user by first and last name
+    static async SearchUser(req, res) {
+        const firstName = req.body.firstName || '';
+        const lastName = req.body.lastName || '';
+        let usersFromSearch = new Set();
+        let results = [];
+
+        try {
+            if (firstName.length > 0 && lastName.length > 0) {
+                let bestMatch = await User.find({$and:[{firstName: firstName}, {lastName: lastName}]});
+    
+                for (let i = 0; i < bestMatch.length; i++) {
+                    usersFromSearch.add(bestMatch[i].userName)
+                    results.push(bestMatch[i]);
+                };
+    
+                let partialMatch = await User.find({$or:[{firstName: firstName}, {lastName: lastName}]});
+    
+                for (let j = 0; j < partialMatch.length; j++) {
+                    if (usersFromSearch.has(partialMatch[j].userName) === false) {
+                        usersFromSearch.add(partialMatch[j].userName)
+                        results.push(partialMatch[j]);
+                    }
+                };
+    
+            } else if (firstName.length > 0) {
+                let matches = await User.find({firstName: firstName});
+    
+                for (let i = 0; i < matches.length; i++) {
+                    results.push(matches[i]);
+                };
+    
+            } else if (lastName.length > 0) {
+                let matches = await User.find({lastName: lastName});
+    
+                for (let i = 0; i < matches.length; i++) {
+                    results.push(matches[i]);
+                };
+            }
+
+            res.json({searchResults: results});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
 }

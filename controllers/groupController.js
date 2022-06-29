@@ -2,7 +2,7 @@ import Group from '../models/groupSchema.js';
 import User from '../models/userSchema.js';
 
 export default class GroupController {
-    // Get all groups from a user
+    // TODO Get all groups from a user
     static async GetGroups(req, res) {
         try {
 
@@ -11,7 +11,7 @@ export default class GroupController {
         }
     }
 
-    // Get one group by id
+    // TODO Get one group by id
     static async GetGroup(req, res) {
         try {
 
@@ -20,7 +20,7 @@ export default class GroupController {
         }
     }
 
-    // Create group
+    // TODO Create group
     static async NewGroup(req, res) {
         try {
 
@@ -29,7 +29,7 @@ export default class GroupController {
         }
     }
 
-    // Edit group
+    // TODO Edit group
     static async EditGroup(req, res) {
         try {
 
@@ -38,7 +38,7 @@ export default class GroupController {
         }
     }
 
-    // Delete group
+    // TODO Delete group
     static async DeleteGroup(req, res) {
         try {
 

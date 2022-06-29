@@ -17,7 +17,10 @@ userRouter.route('/signup/verify').post(UserController.VerifyUniqueUserName);
 // Route for verifying session
 userRouter.route('/session').get(UserController.CheckSession);
 
-// Route for loggin out
+// Route for logging out
 userRouter.route('/logout').get(UserController.Logout);
+
+// Route to search for user
+userRouter.route('/search').post(UserController.SearchUser);
 
 export default userRouter;
