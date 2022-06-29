@@ -3,10 +3,13 @@ const { Schema, model } = pkg;
 
 const GroupSchema = new Schema({
     name: {type: String, required: true},
-    ownerId: {type: Schema.Types.ObjectId, ref: 'User', required: true},
     memberData: [{
         id: {type: Schema.Types.ObjectId, ref: 'User', required: true},
-        canEdit: {type: Boolean, required: true}
+        memberType: {
+            type: String, 
+            required: true,
+            enum: ["Owner", "View", "Edit"]
+        }
     }],
     openInvitations: [{type: Schema.Types.ObjectId, ref: 'User'}]
 }, {collection: 'groups'});

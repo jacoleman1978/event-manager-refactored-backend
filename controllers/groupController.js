@@ -20,9 +20,44 @@ export default class GroupController {
         }
     }
 
-    // TODO Create group
+    // Create group
     static async NewGroup(req, res) {
         try {
+            const body = req.body;
+
+            // Create newGroup object
+            const newGroup = {
+                name: body.groupName,
+                memberData: [...body.memberData],
+                openInvitations: [...body.invitedUserIds]
+            }
+
+            // Create new group document via mongoose
+            const groupDoc = await Group.create(newGroup);
+
+            // Add group to owner's user account
+            const groupOwner = await User.findOne({_id: body.ownerId});
+            groupOwner["groups"].push(groupDoc._id);
+            groupOwner["lastUpdated"] = new Date();
+            await groupOwner.save()
+
+            // Add group to invitees user account
+            for (let userId of body.invitedUserIds) {
+                let invitedUser = await User.findOne({_id: userId});
+
+                let newGroupInvite = {
+                    fromUserId: body.ownerId,
+                    groupId: groupDoc._id
+                };
+
+                invitedUser["groupInvites"].didReceive = true;
+                invitedUser["groupInvites"].inviteList.push(newGroupInvite);
+                invitedUser["lastUpdated"] = new Date();
+
+                await invitedUser.save();
+            };
+
+            res.json({message: "Created new group", group: groupDoc})
 
         } catch(error) {
             res.status(500).json({error: error.message});
