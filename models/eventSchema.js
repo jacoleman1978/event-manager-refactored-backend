@@ -3,12 +3,12 @@ const { Schema, model } = pkg;
 
 const EventSchema = new Schema({
     title: {type: String, required: true},
-    task: [{
+    task: {
         isIt: {type: Boolean, required: true},
         priority: {type: String},
         taskCompleted: {type: Boolean},
         dateCompleted: {type: Date}
-    }],
+    },
     allDay: {
         isIt: {type: Boolean, requied: true},
         startDate: {type: Date, required: true},
@@ -25,7 +25,8 @@ const EventSchema = new Schema({
             start: {type: Date},
             end: {type: Date},
             numTimesRecur: {type: Number}
-        }
+        },
+        eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}]
     },
     peopleAssigned: [{
         userId: {type: Schema.Types.ObjectId, ref: 'User'},
