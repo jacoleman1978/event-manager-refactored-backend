@@ -216,9 +216,30 @@ export default class GroupController {
         }
     }
 
-    // TODO Change group name
+    // Change group name
     static async ChangeGroupName(req, res) {
         try {
+            const body = req.body;
+            const groupName = body.groupName.trim();
+
+            // Ensure that the new groupName exists
+            if (groupName.length > 0) {
+                const groupDoc = await Group.findOne({_id: body.groupId});
+
+                // Check that the member is the owner of the group
+                if (groupDoc.memberData[0].id == body.memberId) {
+                    groupDoc["name"] = groupName;
+                    await groupDoc.save();
+    
+                    res.json({message: "Changed name of group"});
+
+                } else {
+                    res.json({message: "Not the owner of the group"});
+                }
+
+            } else {
+                res.json({message: "Invalid group name"});
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});

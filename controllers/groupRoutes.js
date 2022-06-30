@@ -19,4 +19,7 @@ groupRouter.route('/invite/accept').post(GroupController.AcceptInvitation);
 // Change a group member's member type
 groupRouter.route('/member/type').post(GroupController.ChangeMemberType);
 
+// Change name of the group
+groupRouter.route('/name').post(GroupController.ChangeGroupName);
+
 export default groupRouter;
