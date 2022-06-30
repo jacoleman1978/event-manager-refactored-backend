@@ -1,5 +1,11 @@
 import Group from '../models/groupSchema.js';
 import User from '../models/userSchema.js';
+import addGroupToUser from './groupHelpers/addGroupToUser.js';
+import addGroupToInvitedUsers from './groupHelpers/addGroupToInvitedUsers.js';
+import groupMemberType from './groupHelpers/groupMemberType.js';
+import updatedOpenInvitations from './groupHelpers/updatedOpenInvitations.js';
+import updatedMembersList from './groupHelpers/updatedMembersList.js';
+import updatedGroupInvites from './groupHelpers/updatedGroupInvites.js';
 
 export default class GroupController {
     // TODO Get all groups from a user
@@ -36,26 +42,10 @@ export default class GroupController {
             const groupDoc = await Group.create(newGroup);
 
             // Add group to owner's user account
-            const groupOwner = await User.findOne({_id: body.ownerId});
-            groupOwner["groups"].push(groupDoc._id);
-            groupOwner["lastUpdated"] = new Date();
-            await groupOwner.save()
+            addGroupToUser(body.ownerId, groupDoc._id);
 
             // Add group to invitees user account
-            for (let userId of body.invitedUserIds) {
-                let invitedUser = await User.findOne({_id: userId});
-
-                let newGroupInvite = {
-                    fromUserId: body.ownerId,
-                    groupId: groupDoc._id
-                };
-
-                invitedUser["groupInvites"].didReceive = true;
-                invitedUser["groupInvites"].inviteList.push(newGroupInvite);
-                invitedUser["lastUpdated"] = new Date();
-
-                await invitedUser.save();
-            };
+            addGroupToInvitedUsers(body.invitedUserIds, body.ownerId, groupDoc._id);
 
             res.json({message: "Created new group", group: groupDoc})
 
@@ -72,29 +62,24 @@ export default class GroupController {
             // Get the group document
             const groupDoc = await Group.findOne({_id: body.groupId});
 
-            // If the invitedUserId isn't already on the invited list, add them
-            if (groupDoc["openInvitations"].includes(body.invitedUserId) == false) {
-                groupDoc["openInvitations"].push(body.invitedUserId);
+            // Check if the member doing the inviting is the owner of the group
+            if (groupMemberType(groupDoc.memberData, body.userId) === "Owner") {
+                // If the invitedUserId isn't already on the invited list, add them
+                if (groupDoc.openInvitations.includes(body.invitedUserId) == false) {
+                    groupDoc.openInvitations.push(body.invitedUserId);
 
-                await groupDoc.save();
-    
-                const inviteFrom = {
-                    fromUserId: body.ownerId,
-                    groupId: body.groupId
-                };
-    
-                const invitedUser = await User.findOne({_id: body.invitedUserId});
-                invitedUser["groupInvites"].didReceive = true;
-                invitedUser["groupInvites"].inviteList.push(inviteFrom);
-    
-                await invitedUser.save();
+                    await groupDoc.save();
+        
+                    // Add group to invitees user account
+                    addGroupToInvitedUsers([body.invitedUserId], body.userId, body.groupId);
 
-                res.json({message: "Invite successful"});
+                    res.json({message: "Invite successful"});
+                } else {
+                    res.json({message: "Duplicate invite"});
+                }
             } else {
-                res.json({message: "Duplicate invite"});
+                res.json({message: "Not the group owner"})
             }
-
-            
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -109,21 +94,22 @@ export default class GroupController {
             // Get the group document
             const groupDoc = await Group.findOne({_id: body.groupId});
 
-            // Filter out passed in member from openInvitations
-            let openInvitations = groupDoc["openInvitations"].filter(id => {
-                return id != body.deletedUserId
-            });
-            groupDoc["openInvitations"] = [...openInvitations];
+            // Check if the member doing the deleting is the owner of the group
+            if (groupMemberType(groupDoc.memberData, body.userId) === "Owner") {
+                const usersToRemove = [body.deletedUserId]
 
-            // Filter out passed in member from memberData
-            let memberData = groupDoc["memberData"].filter(member => {
-                return member.id != body.deletedUserId
-            });
-            groupDoc["memberData"] = [...memberData];
+                // Filter out passed in member from openInvitations
+                groupDoc.openInvitations = [updatedOpenInvitations(groupDoc.openInvitations, usersToRemove)];
 
-            await groupDoc.save();
+                // Filter out passed in member from memberData
+                groupDoc.memberData = [updatedMembersList(groupDoc.memberData, usersToRemove)];
 
-            res.json({message: "Group member removed"});
+                await groupDoc.save();
+
+                res.json({message: "Group member removed"});
+            } else {
+                res.json({message: "Not the group owner"})
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -138,37 +124,32 @@ export default class GroupController {
             const groupDoc = await Group.findOne({_id: body.groupId});
 
             // Check if the group has invited the user before proceeding
-            if (groupDoc["openInvitations"].includes(body.userId) == true) {
+            if (groupDoc.openInvitations.includes(body.userId) == true) {
                 // Make the member object and add member to the group with "View" access
                 const member = {
                     id: body.userId,
                     memberType: "View"
                 };
 
-                groupDoc["memberData"].push(member);
+                groupDoc.memberData.push(member);
                 
                 // Remove the userId from openInvitations
-                const openInvitations = groupDoc["openInvitations"].filter(userId => {
-                    return userId != body.userId
-                });
-                groupDoc["openInvitations"] = [...openInvitations];
+                groupDoc.openInvitations = [updatedOpenInvitations(groupDoc.openInvitations, [body.userId])];
 
                 await groupDoc.save();
 
                 const userDoc = await User.findOne({_id: body.userId});
 
                 // Add the group in the user file
-                userDoc["groups"].push(body.groupId);
+                userDoc.groups.push(body.groupId);
 
                 // Remove the groupId from the groupInvites
-                const inviteList = userDoc["groupInvites"].inviteList.filter(groupInvite => {
-                    return groupInvite.groupId != body.groupId
-                });
-                userDoc["groupInvites"].inviteList = [...inviteList];
+                const inviteList = userDoc.groupInvites.inviteList
+                inviteList = [updatedGroupInvites(userDoc.groupInvites, body.groupId)];
 
                 // Update the didReceive flag, if no group invites remaining
                 if (inviteList.length == 0) {
-                    userDoc["groupInvites"].didReceive = false;
+                    userDoc.groupInvites.didReceive = false;
                 };
 
                 await userDoc.save();
@@ -191,7 +172,7 @@ export default class GroupController {
                 const groupDoc = await Group.findOne({_id: body.groupId});
 
                 // Find the correct object in the inviteList, change type and break loop
-                let memberData = groupDoc["memberData"];
+                let memberData = groupDoc.memberData;
 
                 for (let i = 0; i < memberData.length; i++) {
                     if (memberData[i].id == body.memberId) {
@@ -201,7 +182,7 @@ export default class GroupController {
                 }
 
                 // Update the groupDoc with the memberType change and save
-                groupDoc["memberData"] = [...memberData];
+                groupDoc.memberData = [...memberData];
 
                 await groupDoc.save();
 
@@ -228,7 +209,7 @@ export default class GroupController {
 
                 // Check that the member is the owner of the group
                 if (groupDoc.memberData[0].id == body.memberId) {
-                    groupDoc["name"] = groupName;
+                    groupDoc.name = groupName;
                     await groupDoc.save();
     
                     res.json({message: "Changed name of group"});
@@ -249,6 +230,18 @@ export default class GroupController {
     // TODO Delete group
     static async DeleteGroup(req, res) {
         try {
+            const body = req.body;
+
+            const groupDoc = await Group.findOne({_id: body.groupId});
+
+            // Check if the member doing the deleting is the owner of the group
+            if (groupMemberType(groupDoc.memberData, body.userId) === "Owner") {
+
+                res.json({message: "Group deleted"});
+
+            } else {
+                res.json({message: "Not the owner of the group"});
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});
