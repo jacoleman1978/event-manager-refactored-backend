@@ -130,7 +130,7 @@ export default class GroupController {
         }
     }
 
-    // TODO Accept group invitation
+    // Accept group invitation
     static async AcceptInvitation(req, res) {
         try {
             const body = req.body;
@@ -181,7 +181,7 @@ export default class GroupController {
         }
     }
 
-    // TODO Change member type
+    // Change member type
     static async ChangeMemberType(req, res) {
         try {
             const body = req.body;
@@ -190,23 +190,26 @@ export default class GroupController {
                 // Get the group document
                 const groupDoc = await Group.findOne({_id: body.groupId});
 
+                // Find the correct object in the inviteList, change type and break loop
                 let memberData = groupDoc["memberData"];
 
                 for (let i = 0; i < memberData.length; i++) {
                     if (memberData[i].id == body.memberId) {
-                        memberData[i].memberType = boby.memberType;
+                        memberData[i].memberType = body.memberType;
                         break;
                     }
                 }
 
+                // Update the groupDoc with the memberType change and save
                 groupDoc["memberData"] = [...memberData];
 
-                //await groupDoc.save();
+                await groupDoc.save();
 
                 res.json({message: "Changed member type"});
-            }
 
-            res.json({message: "Member type could not be changed"});
+            } else {
+                res.json({message: "Member type could not be changed"});
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});

@@ -11,9 +11,12 @@ groupRouter.route('/new').post(GroupController.NewGroup);
 groupRouter.route('/invite').post(GroupController.InviteMember);
 
 // Remove a group member
-groupRouter.route('/remove').post(GroupController.RemoveMember);
+groupRouter.route('/member/remove').post(GroupController.RemoveMember);
 
 // Accept a group invitation
-groupRouter.route('/accept').post(GroupController.AcceptInvitation);
+groupRouter.route('/invite/accept').post(GroupController.AcceptInvitation);
+
+// Change a group member's member type
+groupRouter.route('/member/type').post(GroupController.ChangeMemberType);
 
 export default groupRouter;
