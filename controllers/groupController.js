@@ -64,8 +64,61 @@ export default class GroupController {
         }
     }
 
-    // TODO Edit group
-    static async EditGroup(req, res) {
+    // Invite new member to group
+    static async InviteMember(req, res) {
+        try {
+            const body = req.body;
+
+            const groupDoc = await Group.findOne({_id: body.groupId});
+
+            if (groupDoc["openInvitations"].includes(body.invitedUserId) == false) {
+                groupDoc["openInvitations"].push(body.invitedUserId);
+
+                await groupDoc.save();
+    
+                const inviteFrom = {
+                    fromUserId: body.ownerId,
+                    groupId: body.groupId
+                };
+    
+                const invitedUser = await User.findOne({_id: body.invitedUserId});
+                invitedUser["groupInvites"].didReceive = true;
+                invitedUser["groupInvites"].inviteList.push(inviteFrom);
+    
+                await invitedUser.save();
+
+                res.json({message: "Invite successful"});
+            } else {
+                res.json({message: "Duplicate invite"});
+            }
+
+            
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    // TODO Remove member from group
+    static async RemoveMember(req, res) {
+        try {
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    // TODO Change member type
+    static async ChangeMemberType(req, res) {
+        try {
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    // TODO Change group name
+    static async ChangeName(req, res) {
         try {
 
         } catch(error) {
