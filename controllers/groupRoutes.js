@@ -10,7 +10,10 @@ groupRouter.route('/new').post(GroupController.NewGroup);
 // Invite new member to group
 groupRouter.route('/invite').post(GroupController.InviteMember);
 
-// Delete a group member
+// Remove a group member
 groupRouter.route('/remove').post(GroupController.RemoveMember);
+
+// Accept a group invitation
+groupRouter.route('/accept').post(GroupController.AcceptInvitation);
 
 export default groupRouter;

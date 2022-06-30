@@ -130,9 +130,83 @@ export default class GroupController {
         }
     }
 
+    // TODO Accept group invitation
+    static async AcceptInvitation(req, res) {
+        try {
+            const body = req.body;
+
+            const groupDoc = await Group.findOne({_id: body.groupId});
+
+            // Check if the group has invited the user before proceeding
+            if (groupDoc["openInvitations"].includes(body.userId) == true) {
+                // Make the member object and add member to the group with "View" access
+                const member = {
+                    id: body.userId,
+                    memberType: "View"
+                };
+
+                groupDoc["memberData"].push(member);
+                
+                // Remove the userId from openInvitations
+                const openInvitations = groupDoc["openInvitations"].filter(userId => {
+                    return userId != body.userId
+                });
+                groupDoc["openInvitations"] = [...openInvitations];
+
+                await groupDoc.save();
+
+                const userDoc = await User.findOne({_id: body.userId});
+
+                // Add the group in the user file
+                userDoc["groups"].push(body.groupId);
+
+                // Remove the groupId from the groupInvites
+                const inviteList = userDoc["groupInvites"].inviteList.filter(groupInvite => {
+                    return groupInvite.groupId != body.groupId
+                });
+                userDoc["groupInvites"].inviteList = [...inviteList];
+
+                // Update the didReceive flag, if no group invites remaining
+                if (inviteList.length == 0) {
+                    userDoc["groupInvites"].didReceive = false;
+                };
+
+                await userDoc.save();
+            }
+
+            res.json({message: "Accepted group invite"});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
     // TODO Change member type
     static async ChangeMemberType(req, res) {
         try {
+            const body = req.body;
+
+            if (body.memberType === "View" || body.memberType === "Edit") {
+                // Get the group document
+                const groupDoc = await Group.findOne({_id: body.groupId});
+
+                let memberData = groupDoc["memberData"];
+
+                for (let i = 0; i < memberData.length; i++) {
+                    if (memberData[i].id == body.memberId) {
+                        memberData[i].memberType = boby.memberType;
+                        break;
+                    }
+                }
+
+                groupDoc["memberData"] = [...memberData];
+
+                //await groupDoc.save();
+
+                res.json({message: "Changed member type"});
+            }
+
+            res.json({message: "Member type could not be changed"});
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -140,7 +214,7 @@ export default class GroupController {
     }
 
     // TODO Change group name
-    static async ChangeName(req, res) {
+    static async ChangeGroupName(req, res) {
         try {
 
         } catch(error) {
