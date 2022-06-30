@@ -69,8 +69,10 @@ export default class GroupController {
         try {
             const body = req.body;
 
+            // Get the group document
             const groupDoc = await Group.findOne({_id: body.groupId});
 
+            // If the invitedUserId isn't already on the invited list, add them
             if (groupDoc["openInvitations"].includes(body.invitedUserId) == false) {
                 groupDoc["openInvitations"].push(body.invitedUserId);
 
@@ -99,9 +101,29 @@ export default class GroupController {
         }
     }
 
-    // TODO Remove member from group
+    // Remove member from group
     static async RemoveMember(req, res) {
         try {
+            const body = req.body;
+
+            // Get the group document
+            const groupDoc = await Group.findOne({_id: body.groupId});
+
+            // Filter out passed in member from openInvitations
+            let openInvitations = groupDoc["openInvitations"].filter(id => {
+                return id != body.deletedUserId
+            });
+            groupDoc["openInvitations"] = [...openInvitations];
+
+            // Filter out passed in member from memberData
+            let memberData = groupDoc["memberData"].filter(member => {
+                return member.id != body.deletedUserId
+            });
+            groupDoc["memberData"] = [...memberData];
+
+            await groupDoc.save();
+
+            res.json({message: "Group member removed"});
 
         } catch(error) {
             res.status(500).json({error: error.message});
