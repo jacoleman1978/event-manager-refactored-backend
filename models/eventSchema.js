@@ -6,7 +6,7 @@ const EventSchema = new Schema({
     task: [{
         isIt: {type: Boolean, required: true},
         priority: {type: String},
-        taskCompleted: {type: Boolean, required: true},
+        taskCompleted: {type: Boolean},
         dateCompleted: {type: Date}
     }],
     allDay: {
@@ -27,20 +27,22 @@ const EventSchema = new Schema({
             numTimesRecur: {type: Number}
         }
     },
-    peopleAssigned: {
-        areThey: {type: Boolean, required: true},
-        users: [{
-            userId: {type: Schema.Types.ObjectId, ref: 'User'},
-            canEdit: {type: Boolean}
-        }]
-    },
+    peopleAssigned: [{
+        userId: {type: Schema.Types.ObjectId, ref: 'User'},
+        userType: {
+            type: String, 
+            required: true,
+            enum: ["Owner", "View", "Edit"]
+        }
+    }],
     groupsAssigned: {
         areThey: {type: Boolean, required: true},
         groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}]
     },
     tags: [{type: String}],
     notes: {type: String},
-    dateCreated: {type: Date, required: true}
+    dateCreated: {type: Date, required: true},
+    lastUpdated: {type: Date, required: true}
 }, {collection: 'events'});
 
 export default model('Event', EventSchema);
