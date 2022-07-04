@@ -174,7 +174,22 @@ export default class EventController {
     }
 
     static async DeleteEvent(req, res) {
+        try {
+            const userId = req.body.userId;
+            const eventId = req.params.eventId;
 
+            const userType = await getUserType(eventId, userId);
+
+            if (userType == 'Owner') {
+                await Event.deleteOne({_id: eventId});
+
+                res.json({message: "Event deleted"})
+            } else {
+                res.json({message: "Only the owner of an event can delete it"})
+            }
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 
     static async GetEvent(req, res) {

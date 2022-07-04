@@ -19,4 +19,7 @@ eventRouter.route('/:eventId/update/removeuser').put(EventController.RemoveAssig
 // Add assigned group
 eventRouter.route('/:eventId/update/addgroup').put(EventController.EditAssignedGroup);
 
+// Delete an event
+eventRouter.route('/:eventId').delete(EventController.DeleteEvent);
+
 export default eventRouter;
