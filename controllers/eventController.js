@@ -1,4 +1,6 @@
 import Event from '../models/eventSchema.js';
+import getUserType from './eventHelpers/getUserType.js';
+import isUserAssigned from './eventHelpers/isUserAssigned.js';
 
 export default class EventController {
     static async AddEvent(req, res) {
@@ -29,16 +31,25 @@ export default class EventController {
     }
 
     static async UpdateEventInfo(req, res) {
-        const fieldsToUpdate = req.body.fieldsToUpdate;
-        const eventId = req.params.eventId;
-        fieldsToUpdate["lastUpdated"] = new Date();
-
         try {
-            await Event.updateOne({_id: eventId}, {$set: fieldsToUpdate});
+            const body = req.body;
+            const eventId = req.params.eventId;
+            const userType = await getUserType(eventId, body.userId);
 
-            const updatedEvent = await Event.findOne({_id: eventId});
+            if ( userType == 'Owner' || userType == 'Edit') {
+                const fieldsToUpdate = body.fieldsToUpdate;
+                
+                fieldsToUpdate["lastUpdated"] = new Date();
+    
+                await Event.updateOne({_id: eventId}, {$set: fieldsToUpdate});
+    
+                const updatedEvent = await Event.findOne({_id: eventId});
+    
+                res.json({message: "Update successful", updatedEvent: updatedEvent});
 
-            res.json({updatedEvent: updatedEvent});
+            } else {
+                res.json({message: "User is not the owner or an editor", updatedEvent: userType})
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -46,7 +57,33 @@ export default class EventController {
     }
 
     static async AddAssignedUser(req, res) {
+        try {
+            const body = req.body;
+            const eventId = req.params.eventId;
+            const userAssigned = await isUserAssigned(eventId, body.userToAssign.userId);
 
+            if (userAssigned == true) {
+                res.json({message: "User already assigned"})
+            } else {
+                const userType = await getUserType(eventId, body.userId);
+
+                if (userType == 'Owner' || userType == 'Edit') {
+                    const userToAssign = body.userToAssign;
+        
+                    await Event.updateOne({_id: eventId}, {$push: {peopleAssigned: [userToAssign]}});
+        
+                    const updatedEvent = await Event.findOne({_id: eventId});
+        
+                    res.json({message: "Assigned new user", updatedEvent: updatedEvent});
+    
+                } else {
+                    res.json({message: "User is not the owner or an editor", updatedEvent: null})
+                }    
+            }
+            
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 
     static async RemoveAssignedUser(req, res) {

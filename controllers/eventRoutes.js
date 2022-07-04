@@ -10,4 +10,7 @@ eventRouter.route('/new').post(EventController.AddEvent);
 // Update event info
 eventRouter.route('/:eventId/update/info').put(EventController.UpdateEventInfo);
 
+// Add assigned user
+eventRouter.route('/:eventId/update/adduser').put(EventController.AddAssignedUser);
+
 export default eventRouter;
