@@ -87,7 +87,32 @@ export default class EventController {
     }
 
     static async RemoveAssignedUser(req, res) {
+        try {
+            const body = req.body;
+            const eventId = req.params.eventId;
+            const userAssigned = await isUserAssigned(eventId, body.userToRemove.userId);
 
+            if (userAssigned == false) {
+                res.json({message: "User not assigned"})
+
+            } else {
+                const userType = await getUserType(eventId, body.userId);
+
+                if (userType == 'Owner' || userType == 'Edit') {
+                    await Event.updateOne({_id: eventId}, {$pull: {peopleAssigned: body.userToRemove}});
+        
+                    const updatedEvent = await Event.findOne({_id: eventId});
+        
+                    res.json({message: "Removed assigned user", updatedEvent: updatedEvent});
+    
+                } else {
+                    res.json({message: "User is not the owner or an editor", updatedEvent: null})
+                }    
+            }
+            
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 
     static async AddAssignedGroup(req, res) {
