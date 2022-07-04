@@ -137,12 +137,40 @@ export default class EventController {
         }
     }
 
-    static async AddAssignedGroup(req, res) {
+    static async EditAssignedGroup(req, res) {
+        try {
+            const body = req.body;
+            const eventId = req.params.eventId;
+            const groupIds = body.groupIds;
 
-    }
+            const userType = await getUserType(eventId, body.userId);
 
-    static async RemoveAssignedGroup(req, res) {
+            // Check that the user requesting the update has the permission to do so
+            if (userType == 'Owner' || userType == 'Edit') {
+                let newGroupsAssigned = {
+                    areThey: true,
+                    groupIds: groupIds
+                };
 
+                if (groupIds.length == 0) {
+                    newGroupsAssigned.areThey = false;
+                }             
+    
+                // Push groupsAssigned object to the event
+                await Event.updateOne({_id: eventId}, {$set: {groupsAssigned: newGroupsAssigned}});
+    
+                // Retrieve the newly edited file and respond with it
+                const updatedEvent = await Event.findOne({_id: eventId});
+    
+                res.json({message: "Assigned new group", updatedEvent: updatedEvent});
+
+            } else {
+                res.json({message: "User is not the owner or an editor", updatedEvent: null})
+            }    
+            
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 
     static async DeleteEvent(req, res) {
