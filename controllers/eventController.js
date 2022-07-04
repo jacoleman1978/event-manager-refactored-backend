@@ -36,13 +36,17 @@ export default class EventController {
             const eventId = req.params.eventId;
             const userType = await getUserType(eventId, body.userId);
 
+            // Check that the user requesting the update has the permission to do so
             if ( userType == 'Owner' || userType == 'Edit') {
                 const fieldsToUpdate = body.fieldsToUpdate;
                 
+                // Update the lastUpdated field
                 fieldsToUpdate["lastUpdated"] = new Date();
     
+                // Update the event document by eventId
                 await Event.updateOne({_id: eventId}, {$set: fieldsToUpdate});
     
+                // Retrieve the newly edited file and respond with it
                 const updatedEvent = await Event.findOne({_id: eventId});
     
                 res.json({message: "Update successful", updatedEvent: updatedEvent});
@@ -62,16 +66,21 @@ export default class EventController {
             const eventId = req.params.eventId;
             const userAssigned = await isUserAssigned(eventId, body.userToAssign.userId);
 
+            // If the user is already assigned, skip assignment
             if (userAssigned == true) {
                 res.json({message: "User already assigned"})
+
             } else {
                 const userType = await getUserType(eventId, body.userId);
 
+                // Check that the user requesting the update has the permission to do so
                 if (userType == 'Owner' || userType == 'Edit') {
                     const userToAssign = body.userToAssign;
         
+                    // Push the userToAssign object to the peopleAssigned list
                     await Event.updateOne({_id: eventId}, {$push: {peopleAssigned: [userToAssign]}});
         
+                    // Retrieve the newly edited file and respond with it
                     const updatedEvent = await Event.findOne({_id: eventId});
         
                     res.json({message: "Assigned new user", updatedEvent: updatedEvent});
@@ -90,24 +99,37 @@ export default class EventController {
         try {
             const body = req.body;
             const eventId = req.params.eventId;
-            const userAssigned = await isUserAssigned(eventId, body.userToRemove.userId);
+            const removedUserId = body.userToRemove.userId;
+            const userAssigned = await isUserAssigned(eventId, removedUserId);
 
+            // If the user is not on the peopleAssigned list, skip removal
             if (userAssigned == false) {
                 res.json({message: "User not assigned"})
 
             } else {
-                const userType = await getUserType(eventId, body.userId);
+                const removedUserType = await getUserType(eventId, removedUserId);
 
-                if (userType == 'Owner' || userType == 'Edit') {
-                    await Event.updateOne({_id: eventId}, {$pull: {peopleAssigned: body.userToRemove}});
-        
-                    const updatedEvent = await Event.findOne({_id: eventId});
-        
-                    res.json({message: "Removed assigned user", updatedEvent: updatedEvent});
-    
+                // Check if the user to be removed is the owner, and skip removal if it is
+                if (removedUserType == 'Owner') {
+                    res.json({message: "Can not remove the owner of an event", updatedEvent: null});
+
                 } else {
-                    res.json({message: "User is not the owner or an editor", updatedEvent: null})
-                }    
+                    const userType = await getUserType(eventId, body.userId);
+
+                    // Check that the user requesting the update has the permission to do so
+                    if (userType == 'Owner' || userType == 'Edit') {
+                        // Remove the user object from the peopleAssigned list
+                        await Event.updateOne({_id: eventId}, {$pull: {peopleAssigned: body.userToRemove}});
+        
+                        // Retrieve the newly edited file and respond with it
+                        const updatedEvent = await Event.findOne({_id: eventId});
+            
+                        res.json({message: "Removed assigned user", updatedEvent: updatedEvent});
+
+                    } else {
+                        res.json({message: "User is not the owner or an editor", updatedEvent: null})
+                    }
+                }     
             }
             
         } catch(error) {
