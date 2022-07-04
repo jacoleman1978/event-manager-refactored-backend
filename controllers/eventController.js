@@ -29,7 +29,20 @@ export default class EventController {
     }
 
     static async UpdateEventInfo(req, res) {
+        const fieldsToUpdate = req.body.fieldsToUpdate;
+        const eventId = req.params.eventId;
+        fieldsToUpdate["lastUpdated"] = new Date();
 
+        try {
+            await Event.updateOne({_id: eventId}, {$set: fieldsToUpdate});
+
+            const updatedEvent = await Event.findOne({_id: eventId});
+
+            res.json({updatedEvent: updatedEvent});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 
     static async AddAssignedUser(req, res) {
