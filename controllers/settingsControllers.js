@@ -22,20 +22,12 @@ export default class SettingsController {
     // Create new settings file
     static async CustomizeSettings(req, res) {
         try {
-            const oldSettingsId = req.params.settingsId;
-            const newSettings = req.body.settings;
+            const settingsId = req.params.settingsId;
+            const customizedSettings = req.body.settings;
 
-            // Create new mongoose document for default settings
-            const settingsDoc = await Settings.create(newSettings);
-
-            // Change settingsId for user
-            const user = await User.findOne({_id: req.session.userId});
-            user.settingsId = settingsDoc._id;
-            await user.save();
-
-            await Settings.deleteOne({_id: oldSettingsId});
-
-            req.session.settingsId = user.settingsId;
+            // Update settings document by settingsId
+            await Settings.updateOne({_id: settingsId}, {$set: {customizedSettings}});
+            
             res.json({message: "Saved new settings", didSave: true});
 
         } catch(error) {

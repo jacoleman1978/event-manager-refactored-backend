@@ -7,7 +7,7 @@ const UserSchema = new Schema({
     userName: {type: String, unique: true, required: true},
     hashedPassword: {type: String, unique: true, required: true},
     tagIds: [{type: Schema.Types.ObjectId, ref: 'Tag'}],
-    groups: [{type: Schema.Types.ObjectId, ref: 'Group'}],
+    groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     settingsId: {type: Schema.Types.ObjectId, ref: 'Settings'},
     groupInviteIds: [{groupId: {type: Schema.Types.ObjectId, ref: 'Group'}}],
     taskIds: {

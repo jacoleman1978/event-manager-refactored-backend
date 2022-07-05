@@ -63,10 +63,6 @@ export default class UserController {
                 lastName: body.lastName,
                 userName: body.userName,
                 hashedPassword: hashedPassword,
-                tags: [],
-                groupInvites: {
-                    didReceive: false,
-                },
                 dateCreated: Date(),
                 lastUpdated: Date()
             };
