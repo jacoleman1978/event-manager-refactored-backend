@@ -1,25 +1,37 @@
 import Event from '../models/eventSchema.js';
+import User from '../models/userSchema.js';
+import Group from '../models/groupSchema.js';
 
 export default class EventController {
     static async AddEvent(req, res) {
-        const body = req.body;
-
-        // Make the newEvent object to later save as an event
-        const newEvent = {
-            title: body.title,
-            task: body.task,
-            allDay: body.allDay,
-            recurring: body.recurring,
-            peopleAssigned: [...body.peopleAssigned],
-            groupsAssigned: body.groupsAssigned,
-            tags: [...body.tags],
-            notes: body.notes,
-            dateCreated: new Date(),
-            lastUpdated: new Date()
-        };
+        // Make the newEvent object
+        const newEvent = req.body;
+        newEvent["dateCreated"] = new Date();
+        newEvent["lastUpdated"] = new Date();
 
         try {
             const eventDoc = await Event.create(newEvent);
+
+            let userIds = [eventDoc.ownerId, ...eventDoc.editorIds, ...eventDoc.viewerIds];
+
+            if (eventDoc.groupIds.length > 0) {
+                for (let groupId of eventDoc.groupIds) {
+                    let groupDoc = await Group.findOne({_id: groupId});
+                    userIds = [...userIds, groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds];
+                }
+            }
+
+            let userIdSet = new Set(userIds);
+
+            if (eventDoc.task.isIt == true) {
+                for (let userId of userIdSet) {
+                    await User.updateOne({_id: userId}, {$addToSet: {taskIds: eventDoc._id}});
+                }
+            } else {
+                for (let userId of userIdSet) {
+                    await User.updateOne({_id: userId}, {$addToSet: {eventIds: eventDoc._id}});
+                }
+            }
 
             res.json({event: eventDoc});
 

@@ -29,12 +29,9 @@ const EventSchema = new Schema({
         },
         eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}]
     },
-    editorIds: [{type: Schema.Types.ObjectId, ref: 'User', required: true}],
-    viewerIds: [{type: Schema.Types.ObjectId, ref: 'User', required: true}],
-    groupsAssigned: {
-        areThey: {type: Boolean, required: true},
-        groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}]
-    },
+    editorIds: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    viewerIds: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     tagIds: [{type: Schema.Types.ObjectId, ref: 'Tag'}],
     notes: {type: String},
     dateCreated: {type: Date, required: true},

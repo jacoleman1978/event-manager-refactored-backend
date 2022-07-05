@@ -10,12 +10,7 @@ const UserSchema = new Schema({
     groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     settingsId: {type: Schema.Types.ObjectId, ref: 'Settings'},
     groupInviteIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
-    taskIds: {
-        critical: [{type: Schema.Types.ObjectId, ref: 'Event'}],
-        high: [{type: Schema.Types.ObjectId, ref: 'Event'}],
-        medium: [{type: Schema.Types.ObjectId, ref: 'Event'}],
-        low: [{type: Schema.Types.ObjectId, ref: 'Event'}]
-    },
+    taskIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
     eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
     dateCreated: {type: Date, required: true},
     lastUpdated: {type: Date, required: true}
