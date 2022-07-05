@@ -3,6 +3,7 @@ const { Schema, model } = pkg;
 
 const EventSchema = new Schema({
     title: {type: String, required: true},
+    ownerId: [{type: Schema.Types.ObjectId, ref: 'User', required: true}],
     task: {
         isIt: {type: Boolean, required: true},
         priority: {type: String},
@@ -28,19 +29,13 @@ const EventSchema = new Schema({
         },
         eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}]
     },
-    peopleAssigned: [{
-        userId: {type: Schema.Types.ObjectId, ref: 'User'},
-        userType: {
-            type: String, 
-            required: true,
-            enum: ["Owner", "View", "Edit"]
-        }
-    }],
+    editorIds: [{type: Schema.Types.ObjectId, ref: 'User', required: true}],
+    viewerIds: [{type: Schema.Types.ObjectId, ref: 'User', required: true}],
     groupsAssigned: {
         areThey: {type: Boolean, required: true},
         groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}]
     },
-    tags: [{type: String}],
+    tagIds: [{type: Schema.Types.ObjectId, ref: 'Tag'}],
     notes: {type: String},
     dateCreated: {type: Date, required: true},
     lastUpdated: {type: Date, required: true}
