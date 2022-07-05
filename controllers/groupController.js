@@ -1,11 +1,5 @@
 import Group from '../models/groupSchema.js';
 import User from '../models/userSchema.js';
-import addGroupToUser from './groupHelpers/addGroupToUser.js';
-import addGroupToInvitedUsers from './groupHelpers/addGroupToInvitedUsers.js';
-import groupMemberType from './groupHelpers/groupMemberType.js';
-import updatedOpenInvitations from './groupHelpers/updatedOpenInvitations.js';
-import updatedMembersList from './groupHelpers/updatedMembersList.js';
-import updatedGroupInvites from './groupHelpers/updatedGroupInvites.js';
 
 export default class GroupController {
     // Create group
@@ -219,13 +213,7 @@ export default class GroupController {
             const groupDoc = await Group.findOne({_id: body.groupId});
 
             // Check if the member doing the deleting is the owner of the group
-            if (groupMemberType(groupDoc.memberData, body.userId) === "Owner") {
 
-                res.json({message: "Group deleted"});
-
-            } else {
-                res.json({message: "Not the owner of the group"});
-            }
 
         } catch(error) {
             res.status(500).json({error: error.message});
