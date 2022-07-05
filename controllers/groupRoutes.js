@@ -11,7 +11,7 @@ groupRouter.route('/new').post(GroupController.NewGroup);
 groupRouter.route('/:groupId/invite').put(GroupController.InviteMember);
 
 // Remove a group member
-groupRouter.route('/member/remove').post(GroupController.RemoveMember);
+groupRouter.route('/:groupId/removemember').put(GroupController.RemoveMember);
 
 // Accept a group invitation
 groupRouter.route('/:groupId/acceptinvite').put(GroupController.AcceptInvitation);

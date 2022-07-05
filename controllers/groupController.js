@@ -69,27 +69,31 @@ export default class GroupController {
     // Remove member from group
     static async RemoveMember(req, res) {
         try {
-            const body = req.body;
+            const groupId = req.params.groupId;
+            const userId = req.body.userId;
+            const removedUserId = req.body.removedUserId;
+            let removeFlag = false;
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: body.groupId});
+            const groupDoc = await Group.findOne({_id: groupId});
 
-            // Check if the member doing the deleting is the owner of the group
-            if (groupMemberType(groupDoc.memberData, body.userId) === "Owner") {
-                const usersToRemove = [body.deletedUserId]
+            // Make edit privilege list
+            const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
 
-                // Filter out passed in member from openInvitations
-                groupDoc.openInvitations = [updatedOpenInvitations(groupDoc.openInvitations, usersToRemove)];
+            // Check if the member doing the removing has edit access for the group
+            for (let canEditId of canEditIds) {
+                if (canEditId == userId && groupDoc.ownerId != removedUserId) {
+                    // Remove the removedUserId from the group doc
+                    await Group.updateOne({_id: groupId}, {$pull: {inviteeIds: removedUserId, editorIds: removedUserId, viewerIds: removedUserId}});
 
-                // Filter out passed in member from memberData
-                groupDoc.memberData = [updatedMembersList(groupDoc.memberData, usersToRemove)];
+                    // Remove the groupId from the user doc
+                    await User.updateOne({_id: removedUserId}, {$pull: {groupInviteIds: groupId, groupIds: groupId}});
 
-                await groupDoc.save();
-
-                res.json({message: "Group member removed"});
-            } else {
-                res.json({message: "Not the group owner"})
+                    removeFlag = true
+                }
             }
+
+            res.json({removed: removeFlag})
 
         } catch(error) {
             res.status(500).json({error: error.message});
