@@ -17,7 +17,7 @@ groupRouter.route('/:groupId/removemember').put(GroupController.RemoveMember);
 groupRouter.route('/:groupId/acceptinvite').put(GroupController.AcceptInvitation);
 
 // Change a group member's member type
-groupRouter.route('/member/type').post(GroupController.ChangeMemberType);
+groupRouter.route('/:groupId/membertype').put(GroupController.ChangeEditPrivilege);
 
 // Change name of the group
 groupRouter.route('/name').post(GroupController.ChangeGroupName);

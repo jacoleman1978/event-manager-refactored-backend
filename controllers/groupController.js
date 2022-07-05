@@ -134,35 +134,48 @@ export default class GroupController {
     }
 
     // Change member type
-    static async ChangeMemberType(req, res) {
+    static async ChangeEditPrivilege(req, res) {
         try {
-            const body = req.body;
+            const groupId = req.params.groupId;
+            const userId = req.body.userId;
+            const userIdPrivChange = req.body.userIdPrivChange;
+            const newEditPrivilege = req.body.newEditPrivilege;
+            let changePrivFlag = false;
 
-            if (body.memberType === "View" || body.memberType === "Edit") {
-                // Get the group document
-                const groupDoc = await Group.findOne({_id: body.groupId});
+            // Get the group document
+            const groupDoc = await Group.findOne({_id: groupId});
 
-                // Find the correct object in the inviteList, change type and break loop
-                let memberData = groupDoc.memberData;
+            // Verifying that owner is making the change and not changing their own privilege
+            if (groupDoc.ownerId == userId && groupDoc.ownerId != userIdPrivChange) {
+                // If changing to "Editor", look through viewerIds
+                if (newEditPrivilege == "Editor") {
+                    for (let viewerId of groupDoc.viewerIds) {
+                        // If viewerId found, change to editor and remove from viewer list
+                        if (viewerId == userIdPrivChange) {
+                            await Group.updateOne({_id: groupId}, {$addToSet: {editorIds: viewerId}, $pull: {viewerIds: viewerId}});
 
-                for (let i = 0; i < memberData.length; i++) {
-                    if (memberData[i].id == body.memberId) {
-                        memberData[i].memberType = body.memberType;
-                        break;
+                            changePrivFlag = true;
+                            break;
+                        }
+                    }
+                } else if (newEditPrivilege == "Viewer") {
+                    // Look through editorIds
+                    for (let editId of groupDoc.editorIds) {
+                        // If editId found, change to viewer and remove from editor list
+                        if (editId == userIdPrivChange) {
+                            await Group.updateOne({_id: groupId}, {$addToSet: {viewerIds: editId}, $pull: {editorIds: editId}});
+
+                            changePrivFlag = true;
+                            break;
+                        }
                     }
                 }
-
-                // Update the groupDoc with the memberType change and save
-                groupDoc.memberData = [...memberData];
-
-                await groupDoc.save();
-
-                res.json({message: "Changed member type"});
-
+                res.json({changedEditPrivilege: changePrivFlag});
+                
             } else {
-                res.json({message: "Member type could not be changed"});
-            }
+                res.json({message: "Group owner can not change"});
 
+            }
         } catch(error) {
             res.status(500).json({error: error.message});
         }
