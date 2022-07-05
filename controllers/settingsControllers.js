@@ -1,5 +1,4 @@
 import Settings from '../models/settingsSchema.js';
-import User from '../models/userSchema.js';
 
 export default class SettingsController {
     // Get settings info via GET
@@ -26,8 +25,8 @@ export default class SettingsController {
             const customizedSettings = req.body.settings;
 
             // Update settings document by settingsId
-            await Settings.updateOne({_id: settingsId}, {$set: {customizedSettings}});
-            
+            await Settings.updateOne({_id: settingsId}, {$set: customizedSettings});
+
             res.json({message: "Saved new settings", didSave: true});
 
         } catch(error) {
