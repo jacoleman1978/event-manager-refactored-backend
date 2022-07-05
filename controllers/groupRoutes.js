@@ -8,13 +8,13 @@ const groupRouter = Router();
 groupRouter.route('/new').post(GroupController.NewGroup);
 
 // Invite new member to group
-groupRouter.route('/invite').post(GroupController.InviteMember);
+groupRouter.route('/:groupId/invite').put(GroupController.InviteMember);
 
 // Remove a group member
 groupRouter.route('/member/remove').post(GroupController.RemoveMember);
 
 // Accept a group invitation
-groupRouter.route('/invite/accept').post(GroupController.AcceptInvitation);
+groupRouter.route('/:groupId/acceptinvite').put(GroupController.AcceptInvitation);
 
 // Change a group member's member type
 groupRouter.route('/member/type').post(GroupController.ChangeMemberType);

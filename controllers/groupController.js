@@ -8,44 +8,22 @@ import updatedMembersList from './groupHelpers/updatedMembersList.js';
 import updatedGroupInvites from './groupHelpers/updatedGroupInvites.js';
 
 export default class GroupController {
-    // TODO Get all groups from a user
-    static async GetGroups(req, res) {
-        try {
-
-        } catch(error) {
-            res.status(500).json({error: error.message});
-        }
-    }
-
-    // TODO Get one group by id
-    static async GetGroup(req, res) {
-        try {
-
-        } catch(error) {
-            res.status(500).json({error: error.message});
-        }
-    }
-
     // Create group
     static async NewGroup(req, res) {
         try {
-            const body = req.body;
-
-            // Create newGroup object
-            const newGroup = {
-                name: body.groupName,
-                memberData: [...body.memberData],
-                openInvitations: [...body.invitedUserIds]
-            }
+            const ownerId = req.body.group.ownerId;
+            const newGroup = req.body.group;
 
             // Create new group document via mongoose
             const groupDoc = await Group.create(newGroup);
 
             // Add group to owner's user account
-            addGroupToUser(body.ownerId, groupDoc._id);
+            await User.updateOne({_id: ownerId}, {$set: {groupIds: groupDoc._id}});
 
             // Add group to invitees user account
-            addGroupToInvitedUsers(body.invitedUserIds, body.ownerId, groupDoc._id);
+            for (let userId of newGroup.inviteeIds) {
+                await User.updateOne({_id: userId}, {$addToSet: {groupInviteIds: groupDoc._id}})
+            }
 
             res.json({message: "Created new group", group: groupDoc})
 
@@ -57,29 +35,31 @@ export default class GroupController {
     // Invite new member to group
     static async InviteMember(req, res) {
         try {
-            const body = req.body;
+            const groupId = req.params.groupId;
+            const userId = req.body.userId;
+            const invitedUserId = req.body.invitedUserId;
+            let inviteFlag = false;
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: body.groupId});
+            const groupDoc = await Group.findOne({_id: groupId});
 
-            // Check if the member doing the inviting is the owner of the group
-            if (groupMemberType(groupDoc.memberData, body.userId) === "Owner") {
-                // If the invitedUserId isn't already on the invited list, add them
-                if (groupDoc.openInvitations.includes(body.invitedUserId) == false) {
-                    groupDoc.openInvitations.push(body.invitedUserId);
+            // Make edit privilege list
+            const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
 
-                    await groupDoc.save();
-        
-                    // Add group to invitees user account
-                    addGroupToInvitedUsers([body.invitedUserId], body.userId, body.groupId);
+            // Check if the member doing the inviting has edit access for the group
+            for (let canEditId of canEditIds) {
+                if (canEditId == userId) {
+                    // Add the invitedUserID to the group doc
+                    await Group.updateOne({_id: groupId}, {$addToSet: {inviteeIds: invitedUserId}});
 
-                    res.json({message: "Invite successful"});
-                } else {
-                    res.json({message: "Duplicate invite"});
+                    // Add the groupId to the user doc
+                    await User.updateOne({_id: invitedUserId}, {$addToSet: {groupInviteIds: groupId}});
+
+                    inviteFlag = true
                 }
-            } else {
-                res.json({message: "Not the group owner"})
             }
+
+            res.json({invited: inviteFlag});
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -119,43 +99,30 @@ export default class GroupController {
     // Accept group invitation
     static async AcceptInvitation(req, res) {
         try {
-            const body = req.body;
+            const groupId = req.params.groupId;
+            const userId = req.body.userId;
+            let acceptedFlag = false
 
-            const groupDoc = await Group.findOne({_id: body.groupId});
+            // Get the group document
+            const groupDoc = await Group.findOne({_id: groupId});
 
-            // Check if the group has invited the user before proceeding
-            if (groupDoc.openInvitations.includes(body.userId) == true) {
-                // Make the member object and add member to the group with "View" access
-                const member = {
-                    id: body.userId,
-                    memberType: "View"
-                };
+            // Make inviteeIds list
+            const inviteeIds = [...groupDoc.inviteeIds]; 
 
-                groupDoc.memberData.push(member);
-                
-                // Remove the userId from openInvitations
-                groupDoc.openInvitations = [updatedOpenInvitations(groupDoc.openInvitations, [body.userId])];
+            // Check if the member accepting the invite is on the inviteeIds list from the group doc
+            for (let inviteeId of inviteeIds) {
+                if (inviteeId == userId) {
+                    // Accept the invitedUserID to the group doc
+                    await Group.updateOne({_id: groupId}, {$addToSet: {editorIds: userId}, $pull: {inviteeIds: userId}});
 
-                await groupDoc.save();
+                    // Add the groupId to the user doc
+                    await User.updateOne({_id: userId}, {$addToSet: {groupIds: groupId}, $pull: {groupInviteIds: groupId}});
 
-                const userDoc = await User.findOne({_id: body.userId});
-
-                // Add the group in the user file
-                userDoc.groups.push(body.groupId);
-
-                // Remove the groupId from the groupInvites
-                const inviteList = userDoc.groupInvites.inviteList
-                inviteList = [updatedGroupInvites(userDoc.groupInvites, body.groupId)];
-
-                // Update the didReceive flag, if no group invites remaining
-                if (inviteList.length == 0) {
-                    userDoc.groupInvites.didReceive = false;
-                };
-
-                await userDoc.save();
+                    acceptedFlag = true
+                }
             }
 
-            res.json({message: "Accepted group invite"});
+            res.json({accepted: acceptedFlag});
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -247,4 +214,23 @@ export default class GroupController {
             res.status(500).json({error: error.message});
         }
     }
+
+    // TODO Get all groups from a user
+    static async GetGroups(req, res) {
+        try {
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    // TODO Get one group by id
+    static async GetGroup(req, res) {
+        try {
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
 }

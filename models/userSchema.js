@@ -9,7 +9,7 @@ const UserSchema = new Schema({
     tagIds: [{type: Schema.Types.ObjectId, ref: 'Tag'}],
     groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     settingsId: {type: Schema.Types.ObjectId, ref: 'Settings'},
-    groupInviteIds: [{groupId: {type: Schema.Types.ObjectId, ref: 'Group'}}],
+    groupInviteIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     taskIds: {
         critical: [{type: Schema.Types.ObjectId, ref: 'Event'}],
         high: [{type: Schema.Types.ObjectId, ref: 'Event'}],
