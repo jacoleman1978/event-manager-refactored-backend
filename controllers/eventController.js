@@ -1,6 +1,4 @@
 import Event from '../models/eventSchema.js';
-import getUserType from './eventHelpers/getUserType.js';
-import isUserAssigned from './eventHelpers/isUserAssigned.js';
 
 export default class EventController {
     static async AddEvent(req, res) {
