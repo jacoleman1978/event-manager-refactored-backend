@@ -117,7 +117,7 @@ export default class GroupController {
             for (let inviteeId of inviteeIds) {
                 if (inviteeId == userId) {
                     // Accept the invitedUserID to the group doc
-                    await Group.updateOne({_id: groupId}, {$addToSet: {editorIds: userId}, $pull: {inviteeIds: userId}});
+                    await Group.updateOne({_id: groupId}, {$addToSet: {viewerIds: userId}, $pull: {inviteeIds: userId}});
 
                     // Add the groupId to the user doc
                     await User.updateOne({_id: userId}, {$addToSet: {groupIds: groupId}, $pull: {groupInviteIds: groupId}});
@@ -171,7 +171,7 @@ export default class GroupController {
                     }
                 }
                 res.json({changedEditPrivilege: changePrivFlag});
-                
+
             } else {
                 res.json({message: "Group owner can not change"});
 
