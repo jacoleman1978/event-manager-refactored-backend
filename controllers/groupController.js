@@ -35,7 +35,7 @@ export default class GroupController {
             let inviteFlag = false;
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: groupId});
+            const groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1, editorIds: 1});
 
             // Make edit privilege list
             const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
@@ -50,6 +50,7 @@ export default class GroupController {
                     await User.updateOne({_id: invitedUserId}, {$addToSet: {groupInviteIds: groupId}});
 
                     inviteFlag = true
+                    break;
                 }
             }
 
@@ -69,7 +70,7 @@ export default class GroupController {
             let removeFlag = false;
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: groupId});
+            const groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1, editorIds: 1});
 
             // Make edit privilege list
             const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
@@ -83,7 +84,24 @@ export default class GroupController {
                     // Remove the groupId from the user doc
                     await User.updateOne({_id: removedUserId}, {$pull: {groupInviteIds: groupId, groupIds: groupId}});
 
+                    // If other groups listed in userDoc, combine each group's eventIds list into a Set and replace groupEventIds
+                    const userDoc = await User.findOne({_id: removedUserId}, {groupIds: 1});
+
+                    if (userDoc.groupIds.length > 0) {
+                        let groupEventIds = []
+                        for (let groupId of userDoc.groupIds) {
+                            let eventIds = await Group.findOne({_id: groupId}, {eventIds});
+
+                            groupEventIds = [...groupEventIds, ...eventIds];
+                        }
+
+                        const groupEventIdSet = new Set(groupEventIds);
+
+                        await User.updateOne({_id: removedUserId}, {$set: {groupEventIds: [...groupEventIdSet]}});
+                    }
+
                     removeFlag = true
+                    break;
                 }
             }
 
@@ -102,7 +120,7 @@ export default class GroupController {
             let acceptedFlag = false
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: groupId});
+            const groupDoc = await Group.findOne({_id: groupId}, {inviteeIds: 1, eventIds: 1});
 
             // Make inviteeIds list
             const inviteeIds = [...groupDoc.inviteeIds]; 
@@ -111,12 +129,18 @@ export default class GroupController {
             for (let inviteeId of inviteeIds) {
                 if (inviteeId == userId) {
                     // Accept the invitedUserID to the group doc
-                    await Group.updateOne({_id: groupId}, {$addToSet: {viewerIds: userId}, $pull: {inviteeIds: userId}});
+                    await Group.updateOne({_id: groupId}, {
+                        $addToSet: {viewerIds: userId}, 
+                        $pull: {inviteeIds: userId}});
 
-                    // Add the groupId to the user doc
-                    await User.updateOne({_id: userId}, {$addToSet: {groupIds: groupId}, $pull: {groupInviteIds: groupId}});
+                    // Add the groupId to the user doc and add eventIds from the group to the user document
+                    await User.updateOne({_id: userId}, {
+                        $addToSet: {groupIds: groupId}, 
+                        $pull: {groupInviteIds: groupId}, 
+                        $addToSet: {$each: {groupEventIds: groupDoc.eventIds}}});
 
-                    acceptedFlag = true
+                    acceptedFlag = true;
+                    break;
                 }
             }
 

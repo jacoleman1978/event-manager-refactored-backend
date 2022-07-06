@@ -6,7 +6,8 @@ const GroupSchema = new Schema({
     ownerId: {type: Schema.Types.ObjectId, ref: 'User', required: true},
     editorIds: [{type: Schema.Types.ObjectId, ref: 'User'}],
     viewerIds: [{type: Schema.Types.ObjectId, ref: 'User'}],
-    inviteeIds: [{type: Schema.Types.ObjectId, ref: 'User'}]
+    inviteeIds: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}]
 }, {collection: 'groups'});
 
 export default model('Group', GroupSchema);

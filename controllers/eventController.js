@@ -12,24 +12,35 @@ export default class EventController {
         try {
             const eventDoc = await Event.create(newEvent);
 
+            // Collect all userIds from the event
             let userIds = [eventDoc.ownerId, ...eventDoc.editorIds, ...eventDoc.viewerIds];
-
-            if (eventDoc.groupIds.length > 0) {
-                for (let groupId of eventDoc.groupIds) {
-                    let groupDoc = await Group.findOne({_id: groupId});
-                    userIds = [...userIds, groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds];
-                }
-            }
-
+            
+            // Make userId list into a Set to remove duplicates
             let userIdSet = new Set(userIds);
 
-            if (eventDoc.task.isIt == true) {
-                for (let userId of userIdSet) {
-                    await User.updateOne({_id: userId}, {$addToSet: {taskIds: eventDoc._id}});
+            // Add the event to the user's document in the eventIds field
+            for (let userId of userIdSet) {
+                await User.updateOne({_id: userId}, {$addToSet: {eventIds: eventDoc._id}});
+            }
+
+            // Check to see if the event has any assigned groups
+            if (eventDoc.groupIds.length > 0) {
+                // Make a list of userIds from assigned groups
+                let groupUserIds = [];
+                for (let groupId of eventDoc.groupIds) {
+                    let groupDoc = await Group.findOne({_id: groupId});
+                    groupUserIds = [...groupUserIds, groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds];
+
+                    // Add the eventId to the group document
+                    await Group.updateOne({_id: groupId}, {$addToSet: {eventIds: eventDoc._id}});
                 }
-            } else {
-                for (let userId of userIdSet) {
-                    await User.updateOne({_id: userId}, {$addToSet: {eventIds: eventDoc._id}});
+
+                // Make the userIds from assigned groups into a Set to remove duplicates
+                let groupUserIdSet = new Set(groupUserIds);
+
+                // Add the eventId to the user's document in the groupEventIds field
+                for (let userId of groupUserIdSet) {
+                    await User.updateOne({_id: userId}, {$addToSet: {groupEventIds: eventDoc._id}});
                 }
             }
 
@@ -188,14 +199,48 @@ export default class EventController {
             const userId = req.body.userId;
             const eventId = req.params.eventId;
 
-            const userType = await getUserType(eventId, userId);
+            const eventDoc = await Event.findOne({_id: eventId});
 
-            if (userType == 'Owner') {
+            if (userId == eventDoc.ownerId) {
+                // Collect all userIds from the event
+                let userIds = [eventDoc.ownerId, ...eventDoc.editorIds, ...eventDoc.viewerIds];
+                
+                // Make userId list into a Set to remove duplicates
+                let userIdSet = new Set(userIds);
+    
+                // Remove the event to the user's document in the eventIds field
+                for (let userId of userIdSet) {
+                    await User.updateOne({_id: userId}, {$pull: {eventIds: eventDoc._id}});
+                }
+    
+                // Check to see if the event has any assigned groups
+                if (eventDoc.groupIds.length > 0) {
+                    // Make a list of userIds from assigned groups
+                    let groupUserIds = [];
+                    for (let groupId of eventDoc.groupIds) {
+                        let groupDoc = await Group.findOne({_id: groupId});
+                        groupUserIds = [...groupUserIds, groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds];
+    
+                        // Remove the eventId from the group document
+                        await Group.updateOne({_id: groupId}, {$pull: {eventIds: eventDoc._id}});
+                    }
+    
+                    // Make the userIds from assigned groups into a Set to remove duplicates
+                    let groupUserIdSet = new Set(groupUserIds);
+    
+                    // Remove the eventId from the user's document in the groupEventIds field
+                    for (let userId of groupUserIdSet) {
+                        await User.updateOne({_id: userId}, {$pull: {groupEventIds: eventDoc._id}});
+                    }
+                }
+
                 await Event.deleteOne({_id: eventId});
 
                 res.json({message: "Event deleted"})
+
             } else {
                 res.json({message: "Only the owner of an event can delete it"})
+                
             }
         } catch(error) {
             res.status(500).json({error: error.message});

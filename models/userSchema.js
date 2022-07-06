@@ -10,8 +10,8 @@ const UserSchema = new Schema({
     groupIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     settingsId: {type: Schema.Types.ObjectId, ref: 'Settings'},
     groupInviteIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
-    taskIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
     eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
+    groupEventIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     dateCreated: {type: Date, required: true},
     lastUpdated: {type: Date, required: true}
 }, {collection: 'users'});
