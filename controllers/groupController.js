@@ -90,7 +90,7 @@ export default class GroupController {
                     if (userDoc.groupIds.length > 0) {
                         let groupEventIds = []
                         for (let groupId of userDoc.groupIds) {
-                            let eventIds = await Group.findOne({_id: groupId}, {eventIds});
+                            let { eventIds } = await Group.findOne({_id: groupId}, {eventIds: 1});
 
                             groupEventIds = [...groupEventIds, ...eventIds];
                         }
@@ -131,13 +131,21 @@ export default class GroupController {
                     // Accept the invitedUserID to the group doc
                     await Group.updateOne({_id: groupId}, {
                         $addToSet: {viewerIds: userId}, 
-                        $pull: {inviteeIds: userId}});
+                        $pull: {inviteeIds: userId}
+                    });
+
+                    // Get groupEventIds from the user
+                    const userDoc = await User.findOne({_id: inviteeId}, {groupEventIds: 1})
+
+                    // Combine group eventIds and user groupEventIds as a set
+                    const eventIds = new Set([...groupDoc.eventIds, ...userDoc.groupEventIds])
 
                     // Add the groupId to the user doc and add eventIds from the group to the user document
                     await User.updateOne({_id: userId}, {
                         $addToSet: {groupIds: groupId}, 
                         $pull: {groupInviteIds: groupId}, 
-                        $addToSet: {$each: {groupEventIds: groupDoc.eventIds}}});
+                        $set: {groupEventIds: [...eventIds]}}
+                    );
 
                     acceptedFlag = true;
                     break;
