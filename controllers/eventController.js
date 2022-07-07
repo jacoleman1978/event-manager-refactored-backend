@@ -83,23 +83,37 @@ export default class EventController {
 
     static async AddAssignedUser(req, res) {
         try {
-            const body = req.body;
+            const userId = req.body.userId;
+            const userToAssign = req.body.userToAssign;
+            const newUserEditPrivilege = req.body.newUserEditPrivilege;
             const eventId = req.params.eventId;
-            const userAssigned = await isUserAssigned(eventId, body.userToAssign.userId);
+            let userAlreadyAssigned = false;
 
-            // If the user is already assigned, skip assignment
-            if (userAssigned == true) {
-                res.json({message: "User already assigned"})
+            const userDoc = await User.findOne({_id: userToAssign}, {eventIds: 1});
 
+            for (let userEventId of userDoc.eventIds) {
+                if (eventId == userEventId) {
+                    userAlreadyAssigned = true;
+                }
+            }
+
+            if (userAlreadyAssigned == true) {
+                res.json({message: "User is already assigned to the event", updatedEvent: null})
             } else {
-                const userType = await getUserType(eventId, body.userId);
+                let canEdit = await canEditEvent(eventId, userId);
 
                 // Check that the user requesting the update has the permission to do so
-                if (userType == 'Owner' || userType == 'Edit') {
-                    const userToAssign = body.userToAssign;
-        
+                if (canEdit == true) {
                     // Push the userToAssign object to the peopleAssigned list
-                    await Event.updateOne({_id: eventId}, {$push: {peopleAssigned: [userToAssign]}});
+                    if (newUserEditPrivilege == "Viewer") {
+                        await Event.updateOne({_id: eventId}, {$addToSet: {viewerIds: userToAssign}});
+    
+                    } else if (newUserEditPrivilege == "Editor") {
+                        await Event.updateOne({_id: eventId}, {$addToSet: {editorIds: userToAssign}});
+                    }
+                    
+                    // Add the event to the user document
+                    await User.updateOne({_id: userToAssign}, {$addToSet: {eventIds: eventId}});
         
                     // Retrieve the newly edited file and respond with it
                     const updatedEvent = await Event.findOne({_id: eventId});
@@ -108,8 +122,8 @@ export default class EventController {
     
                 } else {
                     res.json({message: "User is not the owner or an editor", updatedEvent: null})
-                }    
-            }
+                }
+            }    
             
         } catch(error) {
             res.status(500).json({error: error.message});

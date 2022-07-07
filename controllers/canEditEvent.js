@@ -18,7 +18,6 @@ const canEditEvent = async (eventId, userId) => {
             break;
         }
     }
-
     
     if (canEdit == false) {
         const userDoc = await User.findOne({_id: userId}, {groupIds: 1});

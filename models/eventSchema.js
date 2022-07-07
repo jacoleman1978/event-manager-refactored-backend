@@ -3,7 +3,7 @@ const { Schema, model } = pkg;
 
 const EventSchema = new Schema({
     title: {type: String, required: true},
-    ownerId: [{type: Schema.Types.ObjectId, ref: 'User', required: true}],
+    ownerId: {type: Schema.Types.ObjectId, ref: 'User', required: true},
     task: {
         isIt: {type: Boolean, required: true},
         priority: {type: String},
