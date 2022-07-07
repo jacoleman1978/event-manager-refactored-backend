@@ -132,39 +132,63 @@ export default class EventController {
 
     static async RemoveAssignedUser(req, res) {
         try {
-            const body = req.body;
+            const userId = req.body.userId;
             const eventId = req.params.eventId;
-            const removedUserId = body.userToRemove.userId;
-            const userAssigned = await isUserAssigned(eventId, removedUserId);
+            const userToRemove = req.body.userToRemove;
+            let isRemoverOwner = false;
+            let isRemoverEditor = false;
+            let isRemovedEditor = false;
+            let isRemovedViewer = false;
+            let canUserBeRemoved = false;
 
-            // If the user is not on the peopleAssigned list, skip removal
-            if (userAssigned == false) {
-                res.json({message: "User not assigned"})
+            const eventDoc = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds:1, viewerIds: 1});
+
+            // Check if the user requesting the removal is the event owner
+            if (userId == eventDoc.ownerId) {
+                isRemoverOwner = true;
+            }
+
+            // Check if the user to be removed is an event editor
+            if (eventDoc.editorIds.length > 0) {
+                for (let editorId of eventDoc.editorIds) {
+                    if (userToRemove == editorId) {
+                        isRemovedEditor = true;
+                    }
+                    if (userId == editorId) {
+                        isRemoverEditor = true;
+                    }
+                }
+            } 
+
+            // Check if the user to be removed is an event user
+            if (eventDoc.viewerIds.length > 0) {
+                for (let viewerId of eventDoc.viewerIds) {
+                    if (userToRemove == viewerId) {
+                        isRemovedViewer = true;
+                    }
+                }
+            }
+
+            // Only the owner of an event can remove an editor
+            if (isRemovedEditor == true && isRemoverOwner == true) {
+                canUserBeRemoved = true;
+
+            } else if (isRemovedViewer == true && (isRemoverOwner || isRemoverEditor)) {
+                // A viewer can be removed by the event owner or an event editor
+                canUserBeRemoved = true;
+            }
+
+            if (canUserBeRemoved == true) {
+                // Remove the user id from the event editorIds field
+                await Event.updateOne({_id: eventId}, {$pull: {editorIds: userToRemove, viewerIds: userToRemove}});
+
+                // Remove the event id from the user's eventIds field
+                await User.updateOne({_id: userToRemove}, {$pull: {eventIds: eventId}});
+
+                res.json({message: "Removed assigned user", updatedEvent: true});
 
             } else {
-                const removedUserType = await getUserType(eventId, removedUserId);
-
-                // Check if the user to be removed is the owner, and skip removal if it is
-                if (removedUserType == 'Owner') {
-                    res.json({message: "Can not remove the owner of an event", updatedEvent: null});
-
-                } else {
-                    const userType = await getUserType(eventId, body.userId);
-
-                    // Check that the user requesting the update has the permission to do so
-                    if (userType == 'Owner' || userType == 'Edit') {
-                        // Remove the user object from the peopleAssigned list
-                        await Event.updateOne({_id: eventId}, {$pull: {peopleAssigned: body.userToRemove}});
-        
-                        // Retrieve the newly edited file and respond with it
-                        const updatedEvent = await Event.findOne({_id: eventId});
-            
-                        res.json({message: "Removed assigned user", updatedEvent: updatedEvent});
-
-                    } else {
-                        res.json({message: "User is not the owner or an editor", updatedEvent: null})
-                    }
-                }     
+                res.json({message: "User was not removed", updatedEvent: false})
             }
             
         } catch(error) {
