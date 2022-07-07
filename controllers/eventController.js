@@ -1,6 +1,7 @@
 import Event from '../models/eventSchema.js';
 import User from '../models/userSchema.js';
 import Group from '../models/groupSchema.js';
+import canEditEvent from './canEditEvent.js';
 
 export default class EventController {
     static async AddEvent(req, res) {
@@ -53,14 +54,13 @@ export default class EventController {
 
     static async UpdateEventInfo(req, res) {
         try {
-            const body = req.body;
+            const userId = req.body.userId;
+            const fieldsToUpdate = req.body.fieldsToUpdate;
             const eventId = req.params.eventId;
-            const userType = await getUserType(eventId, body.userId);
+            let canEdit = await canEditEvent(eventId, userId);
 
-            // Check that the user requesting the update has the permission to do so
-            if ( userType == 'Owner' || userType == 'Edit') {
-                const fieldsToUpdate = body.fieldsToUpdate;
-                
+            
+            if (canEdit == true) {
                 // Update the lastUpdated field
                 fieldsToUpdate["lastUpdated"] = new Date();
     
@@ -73,7 +73,7 @@ export default class EventController {
                 res.json({message: "Update successful", updatedEvent: updatedEvent});
 
             } else {
-                res.json({message: "User is not the owner or an editor", updatedEvent: userType})
+                res.json({message: "User is not the owner or an editor", updatedEvent: null})
             }
 
         } catch(error) {
@@ -240,7 +240,7 @@ export default class EventController {
 
             } else {
                 res.json({message: "Only the owner of an event can delete it"})
-                
+
             }
         } catch(error) {
             res.status(500).json({error: error.message});
