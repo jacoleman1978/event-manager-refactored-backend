@@ -32,29 +32,46 @@ export default class GroupController {
             const groupId = req.params.groupId;
             const userId = req.body.userId;
             const invitedUserId = req.body.invitedUserId;
+            let alreadyInvited = false;
             let inviteFlag = false;
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1, editorIds: 1});
+            const groupDoc = await Group.findOne({_id: groupId});
 
             // Make edit privilege list
             const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
 
-            // Check if the member doing the inviting has edit access for the group
-            for (let canEditId of canEditIds) {
-                if (canEditId == userId) {
-                    // Add the invitedUserID to the group doc
-                    await Group.updateOne({_id: groupId}, {$addToSet: {inviteeIds: invitedUserId}});
+            const userDoc = await User.findOne({_id: invitedUserId}, {groupIds: 1, groupInviteIds: 1});
 
-                    // Add the groupId to the user doc
-                    await User.updateOne({_id: invitedUserId}, {$addToSet: {groupInviteIds: groupId}});
+            const invitedUserGroups = [...userDoc.groupIds, ...userDoc.groupInviteIds];
 
-                    inviteFlag = true
-                    break;
+            for (let userGroupId of invitedUserGroups) {
+                if (groupId == userGroupId) {
+                    alreadyInvited = true;
                 }
             }
 
-            res.json({invited: inviteFlag});
+            // If invited user is already a member of the group, don't invite
+            if (alreadyInvited == true) {
+                res.json({message: "Already invited",invited: false});
+
+            } else {
+                // Check if the member doing the inviting has edit access for the group
+                for (let canEditId of canEditIds) {
+                    if (canEditId == userId) {
+                        // Add the invitedUserID to the group doc
+                        await Group.updateOne({_id: groupId}, {$addToSet: {inviteeIds: invitedUserId}});
+
+                        // Add the groupId to the user doc
+                        await User.updateOne({_id: invitedUserId}, {$addToSet: {groupInviteIds: groupId}});
+
+                        inviteFlag = true
+                        break;
+                    }
+                }
+
+                res.json({invited: inviteFlag});
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});
