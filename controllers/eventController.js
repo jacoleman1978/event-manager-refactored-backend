@@ -62,21 +62,22 @@ export default class EventController {
             let canEdit = false;
 
             // Retrieve the ownerId of the event
-            const { ownerId, groupIds } = await Event.findOne({_id: eventId}, {ownerId: 1, groupIds: 1});
+            const { ownerId, editorIds } = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds: 1});
 
             // Check if the user updating the event is the owner of the event
             if (userId == ownerId) {
                 canEdit = true;
             }
 
-            // If the userId does not belong to the event owner, check if the user has edit permission from their group
+            // If the userId does not belong to the event owner, check if the user has edit permission
             if (canEdit == false) {
-                for (let groupId of groupIds) {
-                    let groupDoc = await Group.findOne({_id: groupId}, )
+                for (let editorId of editorIds) {
+                    if (userId == editorId) {
+                        canEdit = true;
+                        break;
+                    }
                 }
             }
-
-            //let canEdit = await canEditEvent(eventId, userId);
 
             if (canEdit == true) {
                 // Update the lastUpdated field
@@ -98,121 +99,6 @@ export default class EventController {
             res.status(500).json({error: error.message});
         }
     }
-
-    // static async AddAssignedUser(req, res) {
-    //     try {
-    //         const userId = req.body.userId;
-    //         const userToAssign = req.body.userToAssign;
-    //         const newUserEditPrivilege = req.body.newUserEditPrivilege;
-    //         const eventId = req.params.eventId;
-    //         let userAlreadyAssigned = false;
-
-    //         const userDoc = await User.findOne({_id: userToAssign}, {eventIds: 1});
-
-    //         for (let userEventId of userDoc.eventIds) {
-    //             if (eventId == userEventId) {
-    //                 userAlreadyAssigned = true;
-    //             }
-    //         }
-
-    //         if (userAlreadyAssigned == true) {
-    //             res.json({message: "User is already assigned to the event", updatedEvent: null})
-    //         } else {
-    //             let canEdit = await canEditEvent(eventId, userId);
-
-    //             // Check that the user requesting the update has the permission to do so
-    //             if (canEdit == true) {
-    //                 // Push the userToAssign object to the peopleAssigned list
-    //                 if (newUserEditPrivilege == "Viewer") {
-    //                     await Event.updateOne({_id: eventId}, {$addToSet: {viewerIds: userToAssign}});
-    
-    //                 } else if (newUserEditPrivilege == "Editor") {
-    //                     await Event.updateOne({_id: eventId}, {$addToSet: {editorIds: userToAssign}});
-    //                 }
-                    
-    //                 // Add the event to the user document
-    //                 await User.updateOne({_id: userToAssign}, {$addToSet: {eventIds: eventId}});
-        
-    //                 // Retrieve the newly edited file and respond with it
-    //                 const updatedEvent = await Event.findOne({_id: eventId});
-        
-    //                 res.json({message: "Assigned new user", updatedEvent: updatedEvent});
-    
-    //             } else {
-    //                 res.json({message: "User is not the owner or an editor", updatedEvent: null})
-    //             }
-    //         }    
-            
-    //     } catch(error) {
-    //         res.status(500).json({error: error.message});
-    //     }
-    // }
-
-    // static async RemoveAssignedUser(req, res) {
-    //     try {
-    //         const userId = req.body.userId;
-    //         const eventId = req.params.eventId;
-    //         const userToRemove = req.body.userToRemove;
-    //         let isRemoverOwner = false;
-    //         let isRemoverEditor = false;
-    //         let isRemovedEditor = false;
-    //         let isRemovedViewer = false;
-    //         let canUserBeRemoved = false;
-
-    //         const eventDoc = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds:1, viewerIds: 1});
-
-    //         // Check if the user requesting the removal is the event owner
-    //         if (userId == eventDoc.ownerId) {
-    //             isRemoverOwner = true;
-    //         }
-
-    //         // Check if the user to be removed is an event editor
-    //         if (eventDoc.editorIds.length > 0) {
-    //             for (let editorId of eventDoc.editorIds) {
-    //                 if (userToRemove == editorId) {
-    //                     isRemovedEditor = true;
-    //                 }
-    //                 if (userId == editorId) {
-    //                     isRemoverEditor = true;
-    //                 }
-    //             }
-    //         } 
-
-    //         // Check if the user to be removed is an event viewer
-    //         if (eventDoc.viewerIds.length > 0) {
-    //             for (let viewerId of eventDoc.viewerIds) {
-    //                 if (userToRemove == viewerId) {
-    //                     isRemovedViewer = true;
-    //                 }
-    //             }
-    //         }
-
-    //         // Only the owner of an event can remove an editor
-    //         if (isRemovedEditor == true && isRemoverOwner == true) {
-    //             canUserBeRemoved = true;
-
-    //         } else if (isRemovedViewer == true && (isRemoverOwner || isRemoverEditor)) {
-    //             // A viewer can be removed by the event owner or an event editor
-    //             canUserBeRemoved = true;
-    //         }
-
-    //         if (canUserBeRemoved == true) {
-    //             // Remove the user id from the event editorIds field
-    //             await Event.updateOne({_id: eventId}, {$pull: {editorIds: userToRemove, viewerIds: userToRemove}});
-
-    //             // Remove the event id from the user's eventIds field
-    //             await User.updateOne({_id: userToRemove}, {$pull: {eventIds: eventId}});
-
-    //             res.json({message: "Removed assigned user", updatedEvent: true});
-
-    //         } else {
-    //             res.json({message: "User was not removed", updatedEvent: false})
-    //         }
-            
-    //     } catch(error) {
-    //         res.status(500).json({error: error.message});
-    //     }
-    // }
 
     static async EditAssignedGroup(req, res) {
         try {
