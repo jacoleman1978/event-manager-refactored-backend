@@ -100,6 +100,66 @@ export default class EventController {
         }
     }
 
+    static async AddAssignedGroup(req, res) {
+        try {
+            const eventId = req.params.eventId;
+            const groupIdToAdd = req.body.groupIdToAdd;
+            const userId = req.body.userId;
+
+            // Retrieve the event document
+            let eventDoc = await Event.findOne({_id: eventId});
+
+            // Only the owner of the event can add a group
+            if (userId == eventDoc.ownerId) {
+                // Check if the group is already assigned to the event
+                let canAddGroup = true;
+
+                for (let eventGroupId of eventDoc.groupIds) {
+                    if (groupIdToAdd == eventGroupId) {
+                        canAddGroup = false;
+                        break;
+                    }
+                }
+
+                // Add the group to the event, if it hasn't already been assigned
+                if (canAddGroup == true) {
+                    // Add the eventId to the group
+                    await Group.updateOne({_id: groupIdToAdd}, {$addToSet: {eventIds: eventId}});
+
+                    // Retrieve the groupDoc
+                    const groupDoc = await Group.findOne({_id: groupIdToAdd});
+
+                    // Create new Sets of editorIds and viewerIds from current event and new group added
+                    const eventEditors = new Set([groupDoc.ownerId, ...groupDoc.editorIds, ...eventDoc.editorIds]);
+
+                    const eventViewers = new Set([...groupDoc.viewerIds, ...eventDoc.viewerIds]);
+
+                    // Add groupId to event document and set the editorIds and viewerIds with the new Sets
+                    await Event.updateOne({_id: eventId}, {$addToSet: {groupIds: groupIdToAdd}, $set: {editorIds: [...eventEditors], viewerIds: [...eventViewers]}});
+
+                    // Add eventId to the group member's user's field of groupEventIds
+                    const newUserIds = new Set([groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds]);
+
+                    for (let newUserId of newUserIds) {
+                        await User.updateOne({_id: newUserId}, {$addToSet: {groupEventIds: eventId}});
+                    }
+
+                    eventDoc = await Event.findOne({_id: eventId});
+
+                    res.json({message: "Group Added", eventDoc: eventDoc});
+
+                } else {
+                    res.json({message: "Group is already assigned", eventDoc: eventDoc});
+                }   
+            } else {
+                res.json({message: "Only the owner of the event can assign a new group", eventDoc: eventDoc});
+            }
+
+        } catch(error) {
+            res.status(500).json({error: error.message})
+        }
+    }
+
     static async EditAssignedGroup(req, res) {
         try {
             const eventId = req.params.eventId;

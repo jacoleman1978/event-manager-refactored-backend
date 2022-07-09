@@ -10,14 +10,8 @@ eventRouter.route('/new').post(EventController.AddEvent);
 // Update event info
 eventRouter.route('/:eventId/update/info').put(EventController.UpdateEventInfo);
 
-// // Add assigned user
-// eventRouter.route('/:eventId/update/adduser').put(EventController.AddAssignedUser);
-
-// // Remove assigned user
-// eventRouter.route('/:eventId/update/removeuser').put(EventController.RemoveAssignedUser);
-
 // Add assigned group
-eventRouter.route('/:eventId/update/addgroup').put(EventController.EditAssignedGroup);
+eventRouter.route('/:eventId/update/addgroup').put(EventController.AddAssignedGroup);
 
 // Delete an event
 eventRouter.route('/:eventId').delete(EventController.DeleteEvent);
