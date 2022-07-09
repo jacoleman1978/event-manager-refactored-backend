@@ -56,7 +56,6 @@ const SettingsSchema = new Schema({
         startDate: {type: String, required: true, default: "Today"},
         endDate: {type: String, required: true, default: "+1 Week"}
     },
-    peopleAssigned: [{type: Schema.Types.ObjectId, ref: 'User'}],
     groupsAssigned: [{type: Schema.Types.ObjectId, ref: 'Group'}]
 }, {collection: 'settings'});
 

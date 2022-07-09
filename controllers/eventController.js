@@ -11,39 +11,41 @@ export default class EventController {
         newEvent["lastUpdated"] = new Date();
 
         try {
-            const eventDoc = await Event.create(newEvent);
+            let eventDoc = await Event.create(newEvent);
 
-            // Collect all userIds from the event
-            let userIds = [eventDoc.ownerId, ...eventDoc.editorIds, ...eventDoc.viewerIds];
-            
-            // Make userId list into a Set to remove duplicates
-            let userIdSet = new Set(userIds);
-
-            // Add the event to the user's document in the eventIds field
-            for (let userId of userIdSet) {
-                await User.updateOne({_id: userId}, {$addToSet: {eventIds: eventDoc._id}});
-            }
+            // Add the event to the owner's user document in the eventIds field
+            await User.updateOne({_id: newEvent.ownerId}, {$addToSet: {eventIds: eventDoc._id}});
 
             // Check to see if the event has any assigned groups
             if (eventDoc.groupIds.length > 0) {
                 // Make a list of userIds from assigned groups
-                let groupUserIds = [];
+                let groupEditorUserIds = new Set();
+                let groupViewerUserIds = new Set();
+
                 for (let groupId of eventDoc.groupIds) {
                     let groupDoc = await Group.findOne({_id: groupId});
-                    groupUserIds = [...groupUserIds, groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds];
+
+                    groupEditorUserIds = new Set([...groupEditorUserIds, groupDoc.ownerId, ...groupDoc.editorIds]);
+
+                    groupViewerUserIds = new Set([...groupViewerUserIds, ...groupDoc.viewerIds]);
 
                     // Add the eventId to the group document
                     await Group.updateOne({_id: groupId}, {$addToSet: {eventIds: eventDoc._id}});
                 }
 
-                // Make the userIds from assigned groups into a Set to remove duplicates
-                let groupUserIdSet = new Set(groupUserIds);
+                // Add userIds from groups to event with appropriate edit privilege
+                await Event.updateOne({_id: eventDoc._id}, {$set: {editorIds: [...groupEditorUserIds], viewerIds: [...groupViewerUserIds]}});
+
+                // Make Set of all users associated with event
+                const eventUserList = new Set([...groupEditorUserIds, ...groupViewerUserIds]);
 
                 // Add the eventId to the user's document in the groupEventIds field
-                for (let userId of groupUserIdSet) {
+                for (let userId of eventUserList) {
                     await User.updateOne({_id: userId}, {$addToSet: {groupEventIds: eventDoc._id}});
                 }
             }
+
+            eventDoc = await Event.findOne({_id: eventDoc._id});
 
             res.json({event: eventDoc});
 
@@ -57,9 +59,25 @@ export default class EventController {
             const userId = req.body.userId;
             const fieldsToUpdate = req.body.fieldsToUpdate;
             const eventId = req.params.eventId;
-            let canEdit = await canEditEvent(eventId, userId);
+            let canEdit = false;
 
-            
+            // Retrieve the ownerId of the event
+            const { ownerId, groupIds } = await Event.findOne({_id: eventId}, {ownerId: 1, groupIds: 1});
+
+            // Check if the user updating the event is the owner of the event
+            if (userId == ownerId) {
+                canEdit = true;
+            }
+
+            // If the userId does not belong to the event owner, check if the user has edit permission from their group
+            if (canEdit == false) {
+                for (let groupId of groupIds) {
+                    let groupDoc = await Group.findOne({_id: groupId}, )
+                }
+            }
+
+            //let canEdit = await canEditEvent(eventId, userId);
+
             if (canEdit == true) {
                 // Update the lastUpdated field
                 fieldsToUpdate["lastUpdated"] = new Date();
@@ -81,152 +99,169 @@ export default class EventController {
         }
     }
 
-    static async AddAssignedUser(req, res) {
-        try {
-            const userId = req.body.userId;
-            const userToAssign = req.body.userToAssign;
-            const newUserEditPrivilege = req.body.newUserEditPrivilege;
-            const eventId = req.params.eventId;
-            let userAlreadyAssigned = false;
+    // static async AddAssignedUser(req, res) {
+    //     try {
+    //         const userId = req.body.userId;
+    //         const userToAssign = req.body.userToAssign;
+    //         const newUserEditPrivilege = req.body.newUserEditPrivilege;
+    //         const eventId = req.params.eventId;
+    //         let userAlreadyAssigned = false;
 
-            const userDoc = await User.findOne({_id: userToAssign}, {eventIds: 1});
+    //         const userDoc = await User.findOne({_id: userToAssign}, {eventIds: 1});
 
-            for (let userEventId of userDoc.eventIds) {
-                if (eventId == userEventId) {
-                    userAlreadyAssigned = true;
-                }
-            }
+    //         for (let userEventId of userDoc.eventIds) {
+    //             if (eventId == userEventId) {
+    //                 userAlreadyAssigned = true;
+    //             }
+    //         }
 
-            if (userAlreadyAssigned == true) {
-                res.json({message: "User is already assigned to the event", updatedEvent: null})
-            } else {
-                let canEdit = await canEditEvent(eventId, userId);
+    //         if (userAlreadyAssigned == true) {
+    //             res.json({message: "User is already assigned to the event", updatedEvent: null})
+    //         } else {
+    //             let canEdit = await canEditEvent(eventId, userId);
 
-                // Check that the user requesting the update has the permission to do so
-                if (canEdit == true) {
-                    // Push the userToAssign object to the peopleAssigned list
-                    if (newUserEditPrivilege == "Viewer") {
-                        await Event.updateOne({_id: eventId}, {$addToSet: {viewerIds: userToAssign}});
+    //             // Check that the user requesting the update has the permission to do so
+    //             if (canEdit == true) {
+    //                 // Push the userToAssign object to the peopleAssigned list
+    //                 if (newUserEditPrivilege == "Viewer") {
+    //                     await Event.updateOne({_id: eventId}, {$addToSet: {viewerIds: userToAssign}});
     
-                    } else if (newUserEditPrivilege == "Editor") {
-                        await Event.updateOne({_id: eventId}, {$addToSet: {editorIds: userToAssign}});
-                    }
+    //                 } else if (newUserEditPrivilege == "Editor") {
+    //                     await Event.updateOne({_id: eventId}, {$addToSet: {editorIds: userToAssign}});
+    //                 }
                     
-                    // Add the event to the user document
-                    await User.updateOne({_id: userToAssign}, {$addToSet: {eventIds: eventId}});
+    //                 // Add the event to the user document
+    //                 await User.updateOne({_id: userToAssign}, {$addToSet: {eventIds: eventId}});
         
-                    // Retrieve the newly edited file and respond with it
-                    const updatedEvent = await Event.findOne({_id: eventId});
+    //                 // Retrieve the newly edited file and respond with it
+    //                 const updatedEvent = await Event.findOne({_id: eventId});
         
-                    res.json({message: "Assigned new user", updatedEvent: updatedEvent});
+    //                 res.json({message: "Assigned new user", updatedEvent: updatedEvent});
     
-                } else {
-                    res.json({message: "User is not the owner or an editor", updatedEvent: null})
-                }
-            }    
+    //             } else {
+    //                 res.json({message: "User is not the owner or an editor", updatedEvent: null})
+    //             }
+    //         }    
             
-        } catch(error) {
-            res.status(500).json({error: error.message});
-        }
-    }
+    //     } catch(error) {
+    //         res.status(500).json({error: error.message});
+    //     }
+    // }
 
-    static async RemoveAssignedUser(req, res) {
-        try {
-            const userId = req.body.userId;
-            const eventId = req.params.eventId;
-            const userToRemove = req.body.userToRemove;
-            let isRemoverOwner = false;
-            let isRemoverEditor = false;
-            let isRemovedEditor = false;
-            let isRemovedViewer = false;
-            let canUserBeRemoved = false;
+    // static async RemoveAssignedUser(req, res) {
+    //     try {
+    //         const userId = req.body.userId;
+    //         const eventId = req.params.eventId;
+    //         const userToRemove = req.body.userToRemove;
+    //         let isRemoverOwner = false;
+    //         let isRemoverEditor = false;
+    //         let isRemovedEditor = false;
+    //         let isRemovedViewer = false;
+    //         let canUserBeRemoved = false;
 
-            const eventDoc = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds:1, viewerIds: 1});
+    //         const eventDoc = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds:1, viewerIds: 1});
 
-            // Check if the user requesting the removal is the event owner
-            if (userId == eventDoc.ownerId) {
-                isRemoverOwner = true;
-            }
+    //         // Check if the user requesting the removal is the event owner
+    //         if (userId == eventDoc.ownerId) {
+    //             isRemoverOwner = true;
+    //         }
 
-            // Check if the user to be removed is an event editor
-            if (eventDoc.editorIds.length > 0) {
-                for (let editorId of eventDoc.editorIds) {
-                    if (userToRemove == editorId) {
-                        isRemovedEditor = true;
-                    }
-                    if (userId == editorId) {
-                        isRemoverEditor = true;
-                    }
-                }
-            } 
+    //         // Check if the user to be removed is an event editor
+    //         if (eventDoc.editorIds.length > 0) {
+    //             for (let editorId of eventDoc.editorIds) {
+    //                 if (userToRemove == editorId) {
+    //                     isRemovedEditor = true;
+    //                 }
+    //                 if (userId == editorId) {
+    //                     isRemoverEditor = true;
+    //                 }
+    //             }
+    //         } 
 
-            // Check if the user to be removed is an event user
-            if (eventDoc.viewerIds.length > 0) {
-                for (let viewerId of eventDoc.viewerIds) {
-                    if (userToRemove == viewerId) {
-                        isRemovedViewer = true;
-                    }
-                }
-            }
+    //         // Check if the user to be removed is an event viewer
+    //         if (eventDoc.viewerIds.length > 0) {
+    //             for (let viewerId of eventDoc.viewerIds) {
+    //                 if (userToRemove == viewerId) {
+    //                     isRemovedViewer = true;
+    //                 }
+    //             }
+    //         }
 
-            // Only the owner of an event can remove an editor
-            if (isRemovedEditor == true && isRemoverOwner == true) {
-                canUserBeRemoved = true;
+    //         // Only the owner of an event can remove an editor
+    //         if (isRemovedEditor == true && isRemoverOwner == true) {
+    //             canUserBeRemoved = true;
 
-            } else if (isRemovedViewer == true && (isRemoverOwner || isRemoverEditor)) {
-                // A viewer can be removed by the event owner or an event editor
-                canUserBeRemoved = true;
-            }
+    //         } else if (isRemovedViewer == true && (isRemoverOwner || isRemoverEditor)) {
+    //             // A viewer can be removed by the event owner or an event editor
+    //             canUserBeRemoved = true;
+    //         }
 
-            if (canUserBeRemoved == true) {
-                // Remove the user id from the event editorIds field
-                await Event.updateOne({_id: eventId}, {$pull: {editorIds: userToRemove, viewerIds: userToRemove}});
+    //         if (canUserBeRemoved == true) {
+    //             // Remove the user id from the event editorIds field
+    //             await Event.updateOne({_id: eventId}, {$pull: {editorIds: userToRemove, viewerIds: userToRemove}});
 
-                // Remove the event id from the user's eventIds field
-                await User.updateOne({_id: userToRemove}, {$pull: {eventIds: eventId}});
+    //             // Remove the event id from the user's eventIds field
+    //             await User.updateOne({_id: userToRemove}, {$pull: {eventIds: eventId}});
 
-                res.json({message: "Removed assigned user", updatedEvent: true});
+    //             res.json({message: "Removed assigned user", updatedEvent: true});
 
-            } else {
-                res.json({message: "User was not removed", updatedEvent: false})
-            }
+    //         } else {
+    //             res.json({message: "User was not removed", updatedEvent: false})
+    //         }
             
-        } catch(error) {
-            res.status(500).json({error: error.message});
-        }
-    }
+    //     } catch(error) {
+    //         res.status(500).json({error: error.message});
+    //     }
+    // }
 
     static async EditAssignedGroup(req, res) {
         try {
-            const body = req.body;
             const eventId = req.params.eventId;
-            const groupIds = body.groupIds;
+            const groupIds = req.body.groupIds;
+            const userId = req.body.userId;
+            let canEdit = false;
 
-            const userType = await getUserType(eventId, body.userId);
+            const eventDoc = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds: 1, groupIds:1});
 
-            // Check that the user requesting the update has the permission to do so
-            if (userType == 'Owner' || userType == 'Edit') {
-                let newGroupsAssigned = {
-                    areThey: true,
-                    groupIds: groupIds
-                };
+            let groupsToRemove = new Set(eventDoc.groupIds);
+            let groupsToAdd = new Set(groupIds);
 
-                if (groupIds.length == 0) {
-                    newGroupsAssigned.areThey = false;
-                }             
-    
-                // Push groupsAssigned object to the event
-                await Event.updateOne({_id: eventId}, {$set: {groupsAssigned: newGroupsAssigned}});
-    
-                // Retrieve the newly edited file and respond with it
-                const updatedEvent = await Event.findOne({_id: eventId});
-    
-                res.json({message: "Assigned new group", updatedEvent: updatedEvent});
+            for (let groupId of groupsToRemove) {
+                if (groupsToAdd.has(groupId.valueOf())) {
+                    console.log("Yup it has it")
+                }
+            }
 
-            } else {
-                res.json({message: "User is not the owner or an editor", updatedEvent: null})
-            }    
-            
+
+            const editAccessUsers = [eventDoc.ownerId, ...eventDoc.editorIds];
+
+            for (let editUserId of editAccessUsers) {
+                if (userId == editUserId) {
+                    canEdit == true;
+                    break;
+                }
+            }
+
+            let groupEditAccessUsers = new Set();
+
+            if (canEdit == false) {
+                for (let groupId of groupIds) {
+                    let groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1, editorIds: 1});
+
+                    groupEditAccessUsers = new Set([...groupEditAccessUsers, groupDoc.ownerId, ...groupDoc.editorIds]);
+                }
+
+                for (let editUserId of groupEditAccessUsers) {
+                    if (userId == editUserId) {
+                        canEdit = true;
+                        break;
+                    }
+                }
+            }
+
+            if (canEdit == true) {
+                //await Event.updateOne({_id: eventId}, {$set: {groupIds: [...groupIds]}});
+            }
         } catch(error) {
             res.status(500).json({error: error.message});
         }

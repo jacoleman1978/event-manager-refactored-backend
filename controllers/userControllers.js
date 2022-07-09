@@ -96,8 +96,7 @@ export default class UserController {
                     everyUnit: "Day(s)",
                     startDate: "Today",
                     endDate: "+1 Week"
-                },
-                peopleAssigned: [userDoc._id]
+                }
             }
 
             // Create new setting document via mongoose
