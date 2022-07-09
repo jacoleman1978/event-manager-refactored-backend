@@ -137,7 +137,7 @@ export default class EventController {
                     // Add groupId to event document and set the editorIds and viewerIds with the new Sets
                     await Event.updateOne({_id: eventId}, {$addToSet: {groupIds: groupIdToAdd}, $set: {editorIds: [...eventEditors], viewerIds: [...eventViewers]}});
 
-                    // Add eventId to the group member's user's field of groupEventIds
+                    // Add eventId to the group member's groupEventIds field of user's document
                     const newUserIds = new Set([groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds]);
 
                     for (let newUserId of newUserIds) {
@@ -156,58 +156,87 @@ export default class EventController {
             }
 
         } catch(error) {
-            res.status(500).json({error: error.message})
+            res.status(500).json({error: error.message});
         }
     }
 
-    static async EditAssignedGroup(req, res) {
+    static async RemoveAssignedGroup(req, res) {
         try {
             const eventId = req.params.eventId;
-            const groupIds = req.body.groupIds;
+            const groupIdToRemove = req.body.groupIdToRemove;
             const userId = req.body.userId;
-            let canEdit = false;
 
-            const eventDoc = await Event.findOne({_id: eventId}, {ownerId: 1, editorIds: 1, groupIds:1});
+            // Retrieve the event document
+            let eventDoc = await Event.findOne({_id: eventId});
 
-            let groupsToRemove = new Set(eventDoc.groupIds);
-            let groupsToAdd = new Set(groupIds);
+            // Only the owner of the event can remove a group
+            if (userId == eventDoc.ownerId) {
+                // Check if the group to remove is assigned to the event
+                let canRemoveGroup = false;
 
-            for (let groupId of groupsToRemove) {
-                if (groupsToAdd.has(groupId.valueOf())) {
-                    console.log("Yup it has it")
-                }
-            }
-
-
-            const editAccessUsers = [eventDoc.ownerId, ...eventDoc.editorIds];
-
-            for (let editUserId of editAccessUsers) {
-                if (userId == editUserId) {
-                    canEdit == true;
-                    break;
-                }
-            }
-
-            let groupEditAccessUsers = new Set();
-
-            if (canEdit == false) {
-                for (let groupId of groupIds) {
-                    let groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1, editorIds: 1});
-
-                    groupEditAccessUsers = new Set([...groupEditAccessUsers, groupDoc.ownerId, ...groupDoc.editorIds]);
-                }
-
-                for (let editUserId of groupEditAccessUsers) {
-                    if (userId == editUserId) {
-                        canEdit = true;
+                for (let eventGroupId of eventDoc.groupIds) {
+                    if (groupIdToRemove == eventGroupId) {
+                        canRemoveGroup = true;
                         break;
                     }
                 }
+
+                // Remove the group from the event, if it is assigned
+                if (canRemoveGroup == true) {
+                    // Remove the eventId from the group
+                    await Group.updateOne({_id: groupIdToRemove}, {$pull: {eventIds: eventId}});
+
+                    // Retrieve the groupDoc
+                    const groupDoc = await Group.findOne({_id: groupIdToRemove});
+
+                    // Remove eventId from group member's groupEventIds field of user's document
+                    const groupUserIds = new Set([groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds]);
+
+                    for (let groupUserId of groupUserIds) {
+                        await User.updateOne({_id: groupUserId}, {$pull: {groupEventIds: eventId}});
+                    }
+
+                    // Remove the groupId from the event and update the eventDoc
+                    eventDoc = await Event.findOneAndUpdate({_id: eventId}, {$pull: {groupIds: groupIdToRemove}}, {new: true});
+
+                    // Check to see if the event has any assigned groups
+                    if (eventDoc.groupIds.length > 0) {
+                        // Make a list of userIds from assigned groups
+                        let groupEditorUserIds = new Set();
+                        let groupViewerUserIds = new Set();
+
+                        for (let groupId of eventDoc.groupIds) {
+                            let groupDoc = await Group.findOne({_id: groupId});
+
+                            groupEditorUserIds = new Set([...groupEditorUserIds, groupDoc.ownerId, ...groupDoc.editorIds]);
+
+                            groupViewerUserIds = new Set([...groupViewerUserIds, ...groupDoc.viewerIds]);
+                        }
+
+                        // Add userIds from groups to event with appropriate edit privilege
+                        await Event.updateOne({_id: eventDoc._id}, {$set: {editorIds: [...groupEditorUserIds], viewerIds: [...groupViewerUserIds]}});
+
+                        // Make Set of all users associated with event
+                        const eventUserList = new Set([...groupEditorUserIds, ...groupViewerUserIds]);
+
+                        // Add the eventId to the user's document in the groupEventIds field
+                        for (let userId of eventUserList) {
+                            await User.updateOne({_id: userId}, {$addToSet: {groupEventIds: eventDoc._id}});
+                        }
+                    }
+
+                    eventDoc = await Event.findOne({_id: eventId});
+
+                    res.json({message: "Group Removed", eventDoc: eventDoc});
+
+                } else {
+                    res.json({message: "Unable to remove a group that has not been assigned", eventDoc: eventDoc})
+                }
+
+            } else {
+                res.json({message: "Only the owner of the event can remove a group", eventDoc: eventDoc})
             }
 
-            if (canEdit == true) {
-                //await Event.updateOne({_id: eventId}, {$set: {groupIds: [...groupIds]}});
-            }
         } catch(error) {
             res.status(500).json({error: error.message});
         }

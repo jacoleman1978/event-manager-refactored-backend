@@ -13,6 +13,9 @@ eventRouter.route('/:eventId/update/info').put(EventController.UpdateEventInfo);
 // Add assigned group
 eventRouter.route('/:eventId/update/addgroup').put(EventController.AddAssignedGroup);
 
+// Remove assigned group
+eventRouter.route('/:eventId/update/removegroup').put(EventController.RemoveAssignedGroup);
+
 // Delete an event
 eventRouter.route('/:eventId').delete(EventController.DeleteEvent);
 
