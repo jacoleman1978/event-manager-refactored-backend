@@ -1,7 +1,6 @@
 import Event from '../models/eventSchema.js';
 import User from '../models/userSchema.js';
 import Group from '../models/groupSchema.js';
-import canEditEvent from './canEditEvent.js';
 
 export default class EventController {
     static async AddEvent(req, res) {

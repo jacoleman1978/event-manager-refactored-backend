@@ -35,11 +35,8 @@ export default class GroupController {
             let alreadyInvited = false;
             let inviteFlag = false;
 
-            // Get the group document
-            const groupDoc = await Group.findOne({_id: groupId});
-
-            // Make edit privilege list
-            const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
+            // Get the group document ownerId
+            const groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1});
 
             const userDoc = await User.findOne({_id: invitedUserId}, {groupIds: 1, groupInviteIds: 1});
 
@@ -56,18 +53,15 @@ export default class GroupController {
                 res.json({message: "Already invited",invited: false});
 
             } else {
-                // Check if the member doing the inviting has edit access for the group
-                for (let canEditId of canEditIds) {
-                    if (canEditId == userId) {
-                        // Add the invitedUserID to the group doc
-                        await Group.updateOne({_id: groupId}, {$addToSet: {inviteeIds: invitedUserId}});
+                // Check if the member doing the inviting is the group owner
+                if (userId == groupDoc.ownerId) {
+                    // Add the invitedUserID to the group doc
+                    await Group.updateOne({_id: groupId}, {$addToSet: {inviteeIds: invitedUserId}});
 
-                        // Add the groupId to the user doc
-                        await User.updateOne({_id: invitedUserId}, {$addToSet: {groupInviteIds: groupId}});
+                    // Add the groupId to the user doc
+                    await User.updateOne({_id: invitedUserId}, {$addToSet: {groupInviteIds: groupId}});
 
-                        inviteFlag = true
-                        break;
-                    }
+                    inviteFlag = true
                 }
 
                 res.json({invited: inviteFlag});
@@ -87,40 +81,53 @@ export default class GroupController {
             let removeFlag = false;
 
             // Get the group document
-            const groupDoc = await Group.findOne({_id: groupId}, {ownerId: 1, editorIds: 1});
+            const groupDoc = await Group.findOne({_id: groupId});
 
-            // Make edit privilege list
-            const canEditIds = [...groupDoc.editorIds, groupDoc.ownerId]; 
+            // Check if the member doing the removing is the group owner
+            if (userId == groupDoc.ownerId && groupDoc.ownerId != removedUserId) {
+                // Remove the removedUserId from the group doc
+                await Group.updateOne({_id: groupId}, {$pull: {inviteeIds: removedUserId, editorIds: removedUserId, viewerIds: removedUserId}});
 
-            // Check if the member doing the removing has edit access for the group
-            for (let canEditId of canEditIds) {
-                if (canEditId == userId && groupDoc.ownerId != removedUserId) {
-                    // Remove the removedUserId from the group doc
-                    await Group.updateOne({_id: groupId}, {$pull: {inviteeIds: removedUserId, editorIds: removedUserId, viewerIds: removedUserId}});
+                // Remove the groupId from the user doc
+                await User.updateOne({_id: removedUserId}, {$pull: {groupInviteIds: groupId, groupIds: groupId}});
 
-                    // Remove the groupId from the user doc
-                    await User.updateOne({_id: removedUserId}, {$pull: {groupInviteIds: groupId, groupIds: groupId}});
+                // If other groups listed in userDoc, combine each group's eventIds list into a Set and replace groupEventIds
+                const userDoc = await User.findOne({_id: removedUserId}, {groupIds: 1});
 
-                    // If other groups listed in userDoc, combine each group's eventIds list into a Set and replace groupEventIds
-                    const userDoc = await User.findOne({_id: removedUserId}, {groupIds: 1});
+                if (userDoc.groupIds.length > 0) {
+                    let groupEventIds = []
+                    for (let groupId of userDoc.groupIds) {
+                        let { eventIds } = await Group.findOne({_id: groupId}, {eventIds: 1});
 
-                    if (userDoc.groupIds.length > 0) {
-                        let groupEventIds = []
-                        for (let groupId of userDoc.groupIds) {
-                            let { eventIds } = await Group.findOne({_id: groupId}, {eventIds: 1});
-
-                            groupEventIds = [...groupEventIds, ...eventIds];
-                        }
-
-                        const groupEventIdSet = new Set(groupEventIds);
-
-                        await User.updateOne({_id: removedUserId}, {$set: {groupEventIds: [...groupEventIdSet]}});
+                        groupEventIds = [...groupEventIds, ...eventIds];
                     }
 
-                    removeFlag = true
-                    break;
+                    const groupEventIdSet = new Set(groupEventIds);
+
+                    await User.updateOne({_id: removedUserId}, {$set: {groupEventIds: [...groupEventIdSet]}});
                 }
-            }
+
+                for (let groupEventId of groupDoc.eventIds) {
+                    let eventDoc = await Event.findOne({_id: groupEventId}, {groupIds: 1})
+                    
+                    // Make a list of userIds from assigned groups
+                    let groupEditorUserIds = new Set();
+                    let groupViewerUserIds = new Set();
+
+                    for (let groupId of eventDoc.groupIds) {
+                        let groupDoc = await Group.findOne({_id: groupId});
+
+                        groupEditorUserIds = new Set([...groupEditorUserIds, groupDoc.ownerId, ...groupDoc.editorIds]);
+
+                        groupViewerUserIds = new Set([...groupViewerUserIds, ...groupDoc.viewerIds]);
+                    }
+
+                    // Add userIds from groups to event with appropriate edit privilege
+                    await Event.updateOne({_id: eventDoc._id}, {$set: {editorIds: [...groupEditorUserIds], viewerIds: [...groupViewerUserIds]}});
+                }
+
+                removeFlag = true
+                }            
 
             res.json({removed: removeFlag})
 
@@ -139,11 +146,8 @@ export default class GroupController {
             // Get the group document
             const groupDoc = await Group.findOne({_id: groupId}, {inviteeIds: 1, eventIds: 1});
 
-            // Make inviteeIds list
-            const inviteeIds = [...groupDoc.inviteeIds]; 
-
             // Check if the member accepting the invite is on the inviteeIds list from the group doc
-            for (let inviteeId of inviteeIds) {
+            for (let inviteeId of groupDoc.inviteeIds) {
                 if (inviteeId == userId) {
                     // Accept the invitedUserID to the group doc
                     await Group.updateOne({_id: groupId}, {
