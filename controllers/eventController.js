@@ -281,11 +281,50 @@ export default class EventController {
         }
     }
 
-    static async GetEvent(req, res) {
+    static async GetEvents(req, res) {
+        try {
+            const userId = req.body.userId;
 
+            const userDoc = await User.findOne({_id: userId}, {eventIds: 1, groupEventIds: 1}).populate('eventIds').populate('groupEventIds');
+
+            console.log(userDoc.eventIds)
+
+            const events = new Set([...userDoc.eventIds, ...userDoc.groupEventIds]);
+
+            res.json({events: [...events]});
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 
-    static async GetEvents(req, res) {
+    static async GetEventById(req, res) {
+        try {
+            const eventId = req.params.eventId;
+            const userId = req.body.userId;
 
+            let validUser = false;
+
+            const eventDoc = await Event.findOne({_id: eventId});
+
+            const eventUserList = new Set([eventDoc.ownerId, ...eventDoc.editorIds, ...eventDoc.viewerIds]);
+
+            for (let eventUserId of eventUserList) {
+                if (userId == eventUserId) {
+                    validUser = true;
+                    break;
+                }
+            }
+
+            if (validUser == true) {
+                res.json({eventDoc: eventDoc});
+
+            } else {
+                res.json({eventDoc: null});
+
+            }
+            
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
     }
 }

@@ -329,7 +329,7 @@ export default class GroupController {
         }
     }
 
-    // TODO Get all groups from a user
+    // Get all groups owned by a user
     static async GetOwnedGroups(req, res) {
         try {
             const userId = req.body.userId;
@@ -342,14 +342,4 @@ export default class GroupController {
             res.status(500).json({error: error.message});
         }
     }
-
-    // TODO Get one group by id
-    static async GetGroup(req, res) {
-        try {
-
-        } catch(error) {
-            res.status(500).json({error: error.message});
-        }
-    }
-
 }

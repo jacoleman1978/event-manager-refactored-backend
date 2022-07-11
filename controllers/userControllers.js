@@ -10,7 +10,7 @@ export default class UserController {
 
         try {
             // Search for userName in database
-            const user = await User.findOne({userName: body.userName}).populate('groups');
+            const user = await User.findOne({userName: body.userName}).populate('eventIds').populate('groupEventIds').populate('settingsId').populate('groupIds').populate('groupInviteIds').populate('tagIds');
 
             // Check whether there is a user found or not
             if (user) {

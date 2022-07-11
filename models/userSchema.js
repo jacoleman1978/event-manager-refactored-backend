@@ -11,7 +11,9 @@ const UserSchema = new Schema({
     settingsId: {type: Schema.Types.ObjectId, ref: 'Settings'},
     groupInviteIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
     eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
-    groupEventIds: [{type: Schema.Types.ObjectId, ref: 'Group'}],
+    groupEventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
+    archivedEventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
+    archivedGroupEventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}],
     dateCreated: {type: Date, required: true},
     lastUpdated: {type: Date, required: true}
 }, {collection: 'users'});

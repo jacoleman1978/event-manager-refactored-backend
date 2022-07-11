@@ -19,4 +19,10 @@ eventRouter.route('/:eventId/update/removegroup').put(EventController.RemoveAssi
 // Delete an event
 eventRouter.route('/:eventId').delete(EventController.DeleteEvent);
 
+// Get all the events for a user
+eventRouter.route('/').get(EventController.GetEvents);
+
+// Get event by eventId
+eventRouter.route('/:eventId').get(EventController.GetEventById);
+
 export default eventRouter;
