@@ -1,5 +1,6 @@
 import Group from '../models/groupSchema.js';
 import User from '../models/userSchema.js';
+import Event from '../models/eventSchema.js';
 
 export default class GroupController {
     // Create group
@@ -96,8 +97,8 @@ export default class GroupController {
 
                 if (userDoc.groupIds.length > 0) {
                     let groupEventIds = []
-                    for (let groupId of userDoc.groupIds) {
-                        let { eventIds } = await Group.findOne({_id: groupId}, {eventIds: 1});
+                    for (let userGroupId of userDoc.groupIds) {
+                        let { eventIds } = await Group.findOne({_id: userGroupId}, {eventIds: 1});
 
                         groupEventIds = [...groupEventIds, ...eventIds];
                     }
@@ -258,15 +259,70 @@ export default class GroupController {
         }
     }
 
-    // TODO Delete group
     static async DeleteGroup(req, res) {
         try {
-            const body = req.body;
+            const groupId = req.params.groupId;
+            const userId = req.body.userId;
 
-            const groupDoc = await Group.findOne({_id: body.groupId});
+            const groupDoc = await Group.findOne({_id: groupId});
 
             // Check if the member doing the deleting is the owner of the group
+            if (userId == groupDoc.ownerId) {
+                // If any member are on the group's inviteeIds, remove the invite from the user document
+                if (groupDoc.inviteeIds.length > 0) {
+                    for (let inviteeId of groupDoc.inviteeIds) {
+                        await User.updateOne({_id: inviteeId}, {$pull: {groupInviteIds: groupId}});
+                    }
+                }
+                
+                // Make Set of all viewer and editor users associated with the group
+                const groupUserIds = new Set([...groupDoc.viewerIds, ...groupDoc.editorIds, groupDoc.ownerId]);
 
+                for (let groupUserId of groupUserIds) {
+                    // Remove the groupId from the user's document
+                    let userDoc = await User.findOneAndUpdate({_id: groupUserId}, {$pull: {groupIds: groupId}}, {new: true});
+
+                    // Check for remaining user groupIds and rebuild groupEventIds 
+                    let groupEventIds = new Set();
+
+                    if (userDoc.groupIds.length > 0) {
+                        for (let userGroupId of userDoc.groupIds) {
+                            let { eventIds } = await Group.findOne({_id: userGroupId}, {eventIds: 1});
+
+                            groupEventIds = new Set([...groupEventIds, ...eventIds]);
+                        } 
+                    }
+
+                    await User.updateOne({_id: groupUserId}, {$set: {groupEventIds: [...groupEventIds]}});
+                }
+
+                for (let groupEventId of groupDoc.eventIds) {
+                    // Remove the groupId from the event's document
+                    let eventDoc = await Event.findOneAndUpdate({_id: groupEventId}, {$pull: {groupIds: groupId}}, {new: true});
+
+                    // Check for remaining event groupIds and rebuild viewerIds and editorIds
+                    let groupEditorUserIds = new Set();
+                    let groupViewerUserIds = new Set();
+
+                    for (let eventGroupId of eventDoc.groupIds) {
+                        let eventGroupDoc = await Group.findOne({_id: eventGroupId});
+
+                        groupEditorUserIds = new Set([...groupEditorUserIds, eventGroupDoc.ownerId, ...eventGroupDoc.editorIds]);
+
+                        groupViewerUserIds = new Set([...groupViewerUserIds, ...eventGroupDoc.viewerIds]);
+                    }
+
+                    // Add userIds from groups to event with appropriate edit privilege
+                    await Event.updateOne({_id: groupEventId}, {$set: {editorIds: [...groupEditorUserIds], viewerIds: [...groupViewerUserIds]}});
+                }
+
+                await Group.deleteOne({_id: groupId});
+
+                res.json({message: "Group deleted"});
+
+            } else {
+                res.json({message: "Only the group owner can delete the group"})
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});

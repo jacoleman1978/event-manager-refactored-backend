@@ -22,4 +22,7 @@ groupRouter.route('/:groupId/membertype').put(GroupController.ChangeEditPrivileg
 // Change name of the group
 groupRouter.route('/name').post(GroupController.ChangeGroupName);
 
+// Delete group
+groupRouter.route('/:groupId').delete(GroupController.DeleteGroup);
+
 export default groupRouter;
