@@ -6,6 +6,7 @@ import userRouter from './controllers/userRoutes.js';
 import settingsRouter from './controllers/settingsRoutes.js';
 import groupRouter from './controllers/groupRoutes.js';
 import eventRouter from './controllers/eventRoutes.js';
+import tagRouter from './controllers/tagRoutes.js';
 import { config } from 'dotenv';
 
 // Application
@@ -29,8 +30,9 @@ app.use(json());
 // Routes
 app.use('/auth', userRouter);
 app.use('/settings', settingsRouter);
-app.use('/group', groupRouter)
+app.use('/group', groupRouter);
 app.use('/event', eventRouter);
+app.use('/tag', tagRouter);
 
 app.use('*', (_req, res) => {
     res.status(404).send("Sorry! The page requested was not found.");
