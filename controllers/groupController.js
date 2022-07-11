@@ -330,8 +330,13 @@ export default class GroupController {
     }
 
     // TODO Get all groups from a user
-    static async GetGroups(req, res) {
+    static async GetOwnedGroups(req, res) {
         try {
+            const userId = req.body.userId;
+
+            const ownedGroups = await Group.find({ownerId: userId});
+
+            res.json({ownedGroups: ownedGroups});
 
         } catch(error) {
             res.status(500).json({error: error.message});

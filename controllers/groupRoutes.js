@@ -25,4 +25,7 @@ groupRouter.route('/name').post(GroupController.ChangeGroupName);
 // Delete group
 groupRouter.route('/:groupId').delete(GroupController.DeleteGroup);
 
+// Get all groups where user is the owner
+groupRouter.route('/owner').get(GroupController.GetOwnedGroups);
+
 export default groupRouter;

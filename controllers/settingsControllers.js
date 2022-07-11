@@ -6,7 +6,7 @@ export default class SettingsController {
         try {
             const settingsId = req.params.settingsId;
 
-            const settings = await Settings.findOne({_id: settingsId}).populate('defaultUser').populate('peopleAssigned').populate('groupsAssigned');
+            const settings = await Settings.findOne({_id: settingsId}).populate('defaultUser').populate('groupsAssigned');
 
             // Return settings to frontend
             res.json({
