@@ -20,7 +20,7 @@ groupRouter.route('/:groupId/acceptinvite').put(GroupController.AcceptInvitation
 groupRouter.route('/:groupId/membertype').put(GroupController.ChangeEditPrivilege);
 
 // Change name of the group
-groupRouter.route('/name').post(GroupController.ChangeGroupName);
+groupRouter.route('/:groupId/name').post(GroupController.ChangeGroupName);
 
 // Delete group
 groupRouter.route('/:groupId').delete(GroupController.DeleteGroup);
