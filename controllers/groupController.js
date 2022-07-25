@@ -332,11 +332,39 @@ export default class GroupController {
     // Get all groups owned by a user
     static async GetOwnedGroups(req, res) {
         try {
-            const userId = req.body.userId;
+            const userId = req.session._id;
 
-            const ownedGroups = await Group.find({ownerId: userId});
+            const ownedGroups = await Group.find({ownerId: userId}).populate('viewerIds').populate('editorIds').populate('inviteeIds');
 
             res.json({ownedGroups: ownedGroups});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    // Get all groups that have membershp in
+    static async GetGroupMemberships(req, res) {
+        try {
+            const userId = req.session._id;
+
+            const groupMemberships = await Group.find({$or:[{editorIds: userId}, {viewerIds: userId}]}).populate('ownerId').populate('viewerIds').populate('editorIds').populate('inviteeIds');
+
+            res.json({groupMemberships: groupMemberships});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    // Get all groups that user has invitations
+    static async GetGroupInvitations(req, res) {
+        try {
+            const userId = req.session._id;
+
+            const groupInvitations = await Group.find({inviteeIds: userId}).populate('ownerId');
+
+            res.json({groupInvitations: groupInvitations});
 
         } catch(error) {
             res.status(500).json({error: error.message});

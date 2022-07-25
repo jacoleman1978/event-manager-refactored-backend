@@ -28,4 +28,10 @@ groupRouter.route('/:groupId').delete(GroupController.DeleteGroup);
 // Get all groups where user is the owner
 groupRouter.route('/owner').get(GroupController.GetOwnedGroups);
 
+// Get all groups where user is a member
+groupRouter.route('/memberships').get(GroupController.GetGroupMemberships);
+
+// Get all groups invited by
+groupRouter.route('/invitations').get(GroupController.GetGroupInvitations);
+
 export default groupRouter;
