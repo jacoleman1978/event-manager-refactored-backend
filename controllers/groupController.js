@@ -30,8 +30,8 @@ export default class GroupController {
     // Invite new member to group
     static async InviteMember(req, res) {
         try {
-            const groupId = req.params.groupId;
-            const userId = req.body.userId;
+            const groupId = req.body.groupId;
+            const userId = req.session._id;
             const invitedUserId = req.body.invitedUserId;
             let alreadyInvited = false;
             let inviteFlag = false;
@@ -76,8 +76,8 @@ export default class GroupController {
     // Remove member from group
     static async RemoveMember(req, res) {
         try {
-            const groupId = req.params.groupId;
-            const userId = req.body.userId;
+            const groupId = req.body.groupId;
+            const userId = req.session._id;
             const removedUserId = req.body.removedUserId;
             let removeFlag = false;
 
@@ -140,8 +140,8 @@ export default class GroupController {
     // Accept group invitation
     static async AcceptInvitation(req, res) {
         try {
-            const groupId = req.params.groupId;
-            const userId = req.body.userId;
+            const groupId = req.body.groupId;
+            const userId = req.session._id;
             let acceptedFlag = false
 
             // Get the group document
@@ -184,8 +184,8 @@ export default class GroupController {
     // Change member type
     static async ChangeEditPrivilege(req, res) {
         try {
-            const groupId = req.params.groupId;
-            const userId = req.body.userId;
+            const userId = req.session._id;
+            const groupId = req.body.groupId;
             const userIdPrivChange = req.body.userIdPrivChange;
             const newEditPrivilege = req.body.newEditPrivilege;
             let changePrivFlag = false;
@@ -232,15 +232,16 @@ export default class GroupController {
     // Change group name
     static async ChangeGroupName(req, res) {
         try {
-            const body = req.body;
-            const groupName = body.groupName.trim();
+            const userId = req.session._id;
+            const groupId = req.body.groupId;
+            const groupName = req.body.groupName.trim();
 
             // Ensure that the new groupName exists
             if (groupName.length > 0) {
-                const groupDoc = await Group.findOne({_id: body.groupId});
+                const groupDoc = await Group.findOne({_id: groupId});
 
                 // Check that the member is the owner of the group
-                if (groupDoc.memberData[0].id == body.memberId) {
+                if (groupDoc.ownerId == userId) {
                     groupDoc.name = groupName;
                     await groupDoc.save();
     

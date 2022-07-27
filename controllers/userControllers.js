@@ -199,7 +199,7 @@ export default class UserController {
                 for (let i = 0; i < matches.length; i++) {
                     results.push(matches[i]);
                 };
-            }
+            } 
 
             res.json({searchResults: results});
 
