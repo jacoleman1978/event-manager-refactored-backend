@@ -330,6 +330,26 @@ export default class GroupController {
         }
     }
 
+    // Get group document by groupId
+    static async GetGroupById(req, res) {
+        try {
+            const userId = req.session._id;
+            const groupId = req.params.groupId;
+
+            const groupDoc = await Group.findOne({_id: groupId}).populate('viewerIds').populate('editorIds').populate('inviteeIds');
+
+            if (groupDoc.ownerId == userId) {
+                res.json({groupDoc: groupDoc});
+
+            } else {
+                res.json({message: "You do not own this group", groupDoc: null})
+            }
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
     // Get all groups owned by a user
     static async GetOwnedGroups(req, res) {
         try {

@@ -22,9 +22,6 @@ groupRouter.route('/membertype').put(GroupController.ChangeEditPrivilege);
 // Change name of the group
 groupRouter.route('/name').put(GroupController.ChangeGroupName);
 
-// Delete group
-groupRouter.route('/:groupId').delete(GroupController.DeleteGroup);
-
 // Get all groups where user is the owner
 groupRouter.route('/owner').get(GroupController.GetOwnedGroups);
 
@@ -33,5 +30,10 @@ groupRouter.route('/memberships').get(GroupController.GetGroupMemberships);
 
 // Get all groups invited by
 groupRouter.route('/invitations').get(GroupController.GetGroupInvitations);
+
+// Get group by groupId or delete group
+groupRouter.route('/:groupId')
+    .get(GroupController.GetGroupById)
+    .delete(GroupController.DeleteGroup);
 
 export default groupRouter;
