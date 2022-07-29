@@ -55,7 +55,7 @@ export default class EventController {
 
     static async UpdateEventInfo(req, res) {
         try {
-            const userId = req.body.userId;
+            const userId = req.session._id;
             const fieldsToUpdate = req.body.fieldsToUpdate;
             const eventId = req.params.eventId;
             let canEdit = false;
@@ -103,7 +103,7 @@ export default class EventController {
         try {
             const eventId = req.params.eventId;
             const groupIdToAdd = req.body.groupIdToAdd;
-            const userId = req.body.userId;
+            const userId = req.session._id;
 
             // Retrieve the event document
             let eventDoc = await Event.findOne({_id: eventId});
@@ -163,7 +163,7 @@ export default class EventController {
         try {
             const eventId = req.params.eventId;
             const groupIdToRemove = req.body.groupIdToRemove;
-            const userId = req.body.userId;
+            const userId = req.session._id;
 
             // Retrieve the event document
             let eventDoc = await Event.findOne({_id: eventId});
@@ -243,7 +243,7 @@ export default class EventController {
 
     static async DeleteEvent(req, res) {
         try {
-            const userId = req.body.userId;
+            const userId = req.session._id;
             const eventId = req.params.eventId;
 
             const eventDoc = await Event.findOne({_id: eventId});
@@ -283,11 +283,9 @@ export default class EventController {
 
     static async GetEvents(req, res) {
         try {
-            const userId = req.body.userId;
+            const userId = req.session._id;
 
             const userDoc = await User.findOne({_id: userId}, {eventIds: 1, groupEventIds: 1}).populate('eventIds').populate('groupEventIds');
-
-            console.log(userDoc.eventIds)
 
             const events = new Set([...userDoc.eventIds, ...userDoc.groupEventIds]);
 
@@ -300,7 +298,7 @@ export default class EventController {
     static async GetEventById(req, res) {
         try {
             const eventId = req.params.eventId;
-            const userId = req.body.userId;
+            const userId = req.session._id;
 
             let validUser = false;
 
@@ -323,6 +321,18 @@ export default class EventController {
 
             }
             
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    static async GetTasks(req, res) {
+        try {
+            const userId = req.session._id;
+
+            const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}]}).populate('editorIds').populate('viewerIds').populate('groupIds').populate('tagIds');
+
+            res.json({tasks: [...taskDocs]});
         } catch(error) {
             res.status(500).json({error: error.message});
         }

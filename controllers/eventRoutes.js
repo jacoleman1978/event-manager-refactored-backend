@@ -4,6 +4,9 @@ import EventController from './eventController.js';
 //Express Router
 const eventRouter = Router();
 
+// Get all tasks for a user
+eventRouter.route('/tasks').get(EventController.GetTasks);
+
 // Create new event
 eventRouter.route('/new').post(EventController.AddEvent);
 
