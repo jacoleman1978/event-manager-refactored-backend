@@ -6,6 +6,8 @@ export default class EventController {
     static async AddEvent(req, res) {
         // Make the newEvent object
         const newEvent = req.body;
+        newEvent["ownerId"] = req.session._id;
+
         newEvent["dateCreated"] = new Date();
         newEvent["lastUpdated"] = new Date();
 
