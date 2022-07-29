@@ -6,8 +6,13 @@ export default class GroupController {
     // Create group
     static async NewGroup(req, res) {
         try {
-            const ownerId = req.body.group.ownerId;
-            const newGroup = req.body.group;
+            const ownerId = req.session._id;
+            const groupName = req.body.groupName;
+
+            const newGroup = {
+                ownerId: ownerId,
+                name: groupName
+            }
 
             // Create new group document via mongoose
             const groupDoc = await Group.create(newGroup);
@@ -15,10 +20,10 @@ export default class GroupController {
             // Add group to owner's user account
             await User.updateOne({_id: ownerId}, {$set: {groupIds: groupDoc._id}});
 
-            // Add group to invitees user account
-            for (let userId of newGroup.inviteeIds) {
-                await User.updateOne({_id: userId}, {$addToSet: {groupInviteIds: groupDoc._id}})
-            }
+            // // Add group to invitees user account
+            // for (let userId of newGroup.inviteeIds) {
+            //     await User.updateOne({_id: userId}, {$addToSet: {groupInviteIds: groupDoc._id}})
+            // }
 
             res.json({message: "Created new group", group: groupDoc})
 
@@ -355,7 +360,7 @@ export default class GroupController {
         try {
             const userId = req.session._id;
 
-            const ownedGroups = await Group.find({ownerId: userId}).populate('viewerIds').populate('editorIds').populate('inviteeIds');
+            const ownedGroups = await Group.find({ownerId: userId}).populate('ownerId').populate('viewerIds').populate('editorIds').populate('inviteeIds');
 
             res.json({ownedGroups: ownedGroups});
 
