@@ -6,7 +6,7 @@ export default class EventController {
     static async AddEvent(req, res) {
         // Make the newEvent object
         const newEvent = req.body;
-        newEvent["ownerId"] = req.session._id;
+        newEvent["ownerId"] = req.session.userId;
 
         newEvent["dateCreated"] = new Date();
         newEvent["lastUpdated"] = new Date();
@@ -57,7 +57,7 @@ export default class EventController {
 
     static async UpdateEventInfo(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const fieldsToUpdate = req.body.fieldsToUpdate;
             const eventId = req.params.eventId;
             let canEdit = false;
@@ -105,7 +105,7 @@ export default class EventController {
         try {
             const eventId = req.params.eventId;
             const groupIdToAdd = req.body.groupIdToAdd;
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             // Retrieve the event document
             let eventDoc = await Event.findOne({_id: eventId});
@@ -165,7 +165,7 @@ export default class EventController {
         try {
             const eventId = req.params.eventId;
             const groupIdToRemove = req.body.groupIdToRemove;
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             // Retrieve the event document
             let eventDoc = await Event.findOne({_id: eventId});
@@ -245,7 +245,7 @@ export default class EventController {
 
     static async DeleteEvent(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const eventId = req.params.eventId;
 
             const eventDoc = await Event.findOne({_id: eventId});
@@ -285,7 +285,7 @@ export default class EventController {
 
     static async GetEvents(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             const userDoc = await User.findOne({_id: userId}, {eventIds: 1, groupEventIds: 1}).populate('eventIds').populate('groupEventIds');
 
@@ -300,7 +300,7 @@ export default class EventController {
     static async GetEventById(req, res) {
         try {
             const eventId = req.params.eventId;
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             let validUser = false;
 
@@ -330,7 +330,7 @@ export default class EventController {
 
     static async GetTasks(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}]}).populate('editorIds').populate('viewerIds').populate('groupIds').populate('tagIds');
 

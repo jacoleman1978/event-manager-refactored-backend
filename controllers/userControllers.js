@@ -6,7 +6,6 @@ export default class UserController {
     // Get user info via POST
     static async Login(req, res) {
         const body = req.body;
-        req.session = null;
 
         try {
             // Search for userName in database
@@ -18,8 +17,12 @@ export default class UserController {
                 const isValidPassword = await compare(body.password, user.hashedPassword);
 
                 if (isValidPassword) {
-                    req.session = user;
-                    req.session.userId = user._id;
+                    let data = {
+                        userId: user._id.toString(),
+                        userName: user.userName
+                    }
+                    req.session = data;
+                    req.session.userId = user._id.toString();
                     res.status(200).json({
                         message: "Valid password",
                         userId: user._id,
@@ -108,7 +111,11 @@ export default class UserController {
             // Save the new user document and set the session
             userDoc.save().then(doc => {
                 req.session = null;
-                req.session = doc;
+                let data = {
+                    userId: doc._id.toString(),
+                    userName: doc.userName
+                }
+                req.session = data;
                 req.session.userId = doc._id;
                 res.status(201).json({message: "Successfully created user", userId: doc._id, didSignup: true, settings: settingsDoc});
             });
@@ -147,8 +154,13 @@ export default class UserController {
     static async CheckSession(req, res) {
         try {
             // Search for userId in database
-            const user = await User.findOne({_id: req.session._id});
-            res.json(user);
+            const user = await User.findOne({_id: req.session.userId});
+
+            let data = {
+                userName: user.userName,
+                userId: user._id
+            }
+            res.json(data);
 
         } catch(error) {
             res.json(null);

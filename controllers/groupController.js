@@ -6,7 +6,7 @@ export default class GroupController {
     // Create group
     static async NewGroup(req, res) {
         try {
-            const ownerId = req.session._id;
+            const ownerId = req.session.userId;
             const groupName = req.body.groupName;
 
             const newGroup = {
@@ -25,7 +25,7 @@ export default class GroupController {
             //     await User.updateOne({_id: userId}, {$addToSet: {groupInviteIds: groupDoc._id}})
             // }
 
-            res.json({message: "Created new group", group: groupDoc})
+            res.json({message: "Created new group"})
 
         } catch(error) {
             res.status(500).json({error: error.message});
@@ -36,7 +36,7 @@ export default class GroupController {
     static async InviteMember(req, res) {
         try {
             const groupId = req.body.groupId;
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const invitedUserId = req.body.invitedUserId;
             let alreadyInvited = false;
             let inviteFlag = false;
@@ -82,7 +82,7 @@ export default class GroupController {
     static async RemoveMember(req, res) {
         try {
             const groupId = req.body.groupId;
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const removedUserId = req.body.removedUserId;
             let removeFlag = false;
 
@@ -146,7 +146,7 @@ export default class GroupController {
     static async AcceptInvitation(req, res) {
         try {
             const groupId = req.body.groupId;
-            const userId = req.session._id;
+            const userId = req.session.userId;
             let acceptedFlag = false
 
             // Get the group document
@@ -189,7 +189,7 @@ export default class GroupController {
     // Change member type
     static async ChangeEditPrivilege(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const groupId = req.body.groupId;
             const userIdPrivChange = req.body.userIdPrivChange;
             const newEditPrivilege = req.body.newEditPrivilege;
@@ -237,7 +237,7 @@ export default class GroupController {
     // Change group name
     static async ChangeGroupName(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const groupId = req.body.groupId;
             const groupName = req.body.groupName.trim();
 
@@ -338,7 +338,7 @@ export default class GroupController {
     // Get group document by groupId
     static async GetGroupById(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
             const groupId = req.params.groupId;
 
             const groupDoc = await Group.findOne({_id: groupId}).populate('viewerIds').populate('editorIds').populate('inviteeIds');
@@ -358,7 +358,7 @@ export default class GroupController {
     // Get all groups owned by a user
     static async GetOwnedGroups(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             const ownedGroups = await Group.find({ownerId: userId}).populate('ownerId').populate('viewerIds').populate('editorIds').populate('inviteeIds');
 
@@ -372,7 +372,7 @@ export default class GroupController {
     // Get all groups that have membershp in
     static async GetGroupMemberships(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             const groupMemberships = await Group.find({$or:[{editorIds: userId}, {viewerIds: userId}]}).populate('ownerId').populate('viewerIds').populate('editorIds').populate('inviteeIds');
 
@@ -386,7 +386,7 @@ export default class GroupController {
     // Get all groups that user has invitations
     static async GetGroupInvitations(req, res) {
         try {
-            const userId = req.session._id;
+            const userId = req.session.userId;
 
             const groupInvitations = await Group.find({inviteeIds: userId}).populate('ownerId');
 
