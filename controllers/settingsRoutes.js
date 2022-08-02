@@ -5,7 +5,7 @@ import SettingsController from './settingsControllers.js';
 const settingsRouter = Router();
 
 // Route to retrieve or customize settings
-settingsRouter.route('/:settingsId')
+settingsRouter.route('/')
     .get(SettingsController.GetSettings)
     .put(SettingsController.CustomizeSettings);
 

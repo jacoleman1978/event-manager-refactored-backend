@@ -2,17 +2,25 @@ import pkg from 'mongoose';
 const { Schema, model } = pkg;
 
 const SettingsSchema = new Schema({
+    ownerId: {type: Schema.Types.ObjectId, ref: 'User'},
     views: {
-        view: {
+        events: {
+            type: String, 
+            required: true,
+            enum: ["By Day", "By List", "By Overview"],
+            default: "By Day"
+        },
+        tasks: {
+            type: String, 
+            required: true,
+            enum: ["By Priority", "By Due Date"],
+            default: "By Priority"
+        },
+        login: {
             type: String, 
             required: true,
             enum: ["Events", "Tasks", "Groups", "Settings"],
             default: "Events"
-        },
-        subView: {
-            type: String, 
-            required: true,
-            enum: ["By Day", "By List", "By Overview", "By Priority", "By Due Date", "None"]
         },
         startOfWeek: {
             type: String, 

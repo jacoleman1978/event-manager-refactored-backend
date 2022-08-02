@@ -4,9 +4,9 @@ export default class SettingsController {
     // Get settings info via GET
     static async GetSettings(req, res) {
         try {
-            const settingsId = req.params.settingsId;
+            const userId = req.session.userId;
 
-            const settings = await Settings.findOne({_id: settingsId}).populate('views.defaultUser').populate('groupsAssigned');
+            const settings = await Settings.findOne({ownerId: userId})
 
             // Return settings to frontend
             res.json({
@@ -21,11 +21,11 @@ export default class SettingsController {
     // Create new settings file
     static async CustomizeSettings(req, res) {
         try {
-            const settingsId = req.params.settingsId;
-            const customizedSettings = req.body.settings;
+            const userId = req.session.userId;
+            const customizedSettings = req.body;
 
             // Update settings document by settingsId
-            await Settings.updateOne({_id: settingsId}, {$set: customizedSettings});
+            await Settings.updateOne({ownerId: userId}, {$set: customizedSettings});
 
             res.json({message: "Saved new settings", didSave: true});
 
