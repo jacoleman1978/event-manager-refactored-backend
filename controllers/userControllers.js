@@ -76,8 +76,9 @@ export default class UserController {
             // Create newSettings default object
             let newSettings = {
                 views: {
-                    view: "Events",
-                    subView: "By List",
+                    events: "By Day",
+                    tasks: "By Priority",
+                    login: "Tasks",
                     startOfWeek: "Sunday",
                     expandedDaysByList: "Today",
                     defaultUser: userDoc._id
@@ -214,6 +215,37 @@ export default class UserController {
             } 
 
             res.json({searchResults: results});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    static async ChangePassword(req, res) {
+        const userId = req.session.userId;
+        const currentPwd = req.body.currentPwd;
+        const newPassword = req.body.newPassword;
+
+        try {
+            // Get user doc
+            const user = await User.findOne({_id: userId});
+
+            // Check user password with hashed password in database
+            const isValidPassword = await compare(currentPwd, user.hashedPassword);
+
+            if (isValidPassword === true) {
+                // Generate salt to hash password
+                const salt = await genSalt(10);
+
+                // Hash the user's password
+                const hashedPassword = await hash(newPassword, salt);
+
+                await User.updateOne({_id: userId}, {$set: {hashedPassword: hashedPassword}});
+
+                res.json({message: "The password has been changed", changedPwd: true})
+            } else {
+                res.json({message: "The current password is invalid", changedPwd: false})
+            }
 
         } catch(error) {
             res.status(500).json({error: error.message});

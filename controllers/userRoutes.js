@@ -23,4 +23,7 @@ userRouter.route('/logout').get(UserController.Logout);
 // Route to search for user
 userRouter.route('/search').post(UserController.SearchUser);
 
+// Route to change password
+userRouter.route('/changepassword').put(UserController.ChangePassword);
+
 export default userRouter;
