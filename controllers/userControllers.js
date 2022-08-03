@@ -75,6 +75,7 @@ export default class UserController {
 
             // Create newSettings default object
             let newSettings = {
+                ownerId: userDoc._id,
                 views: {
                     events: "By Day",
                     tasks: "By Priority",
