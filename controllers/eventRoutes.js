@@ -7,6 +7,9 @@ const eventRouter = Router();
 // Get all tasks for a user
 eventRouter.route('/tasks').get(EventController.GetTasks);
 
+// Get all events for a user
+eventRouter.route('/all').get(EventController.GetEvents);
+
 // Create new event
 eventRouter.route('/new').post(EventController.AddEvent);
 
