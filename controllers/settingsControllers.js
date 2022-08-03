@@ -27,7 +27,9 @@ export default class SettingsController {
             // Update settings document by settingsId
             await Settings.updateOne({ownerId: userId}, {$set: customizedSettings});
 
-            res.json({message: "Saved new settings", didSave: true});
+            const settings = await Settings.findOne({ownerId: userId})
+
+            res.json({message: "Saved new settings", didSave: true, settings: settings});
 
         } catch(error) {
             res.status(500).json({error: error.message, didSave: false});
