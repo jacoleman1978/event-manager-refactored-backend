@@ -31,6 +31,9 @@ groupRouter.route('/memberships').get(GroupController.GetGroupMemberships);
 // Get all groups invited by
 groupRouter.route('/invitations').get(GroupController.GetGroupInvitations);
 
+// Get all groups where user can edit
+groupRouter.route('/canedit').get(GroupController.GetGroupsCanEdit);
+
 // Get group by groupId or delete group
 groupRouter.route('/:groupId')
     .get(GroupController.GetGroupById)

@@ -369,6 +369,20 @@ export default class GroupController {
         }
     }
 
+    // Get all groups that user can edit
+    static async GetGroupsCanEdit(req, res) {
+        try {
+            const userId = req.session.userId;
+
+            const groupsCanEdit = await Group.find({$or: [{ownerId: userId}, {editorIds: userId}]});
+
+            res.json({groupsCanEdit: groupsCanEdit});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
     // Get all groups that have membershp in
     static async GetGroupMemberships(req, res) {
         try {
