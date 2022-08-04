@@ -47,10 +47,30 @@ const SettingsSchema = new Schema({
     },
     allDay: {
         isIt: {type: Boolean, required: true, default: true},
-        startDate: {type: String, required: true, default: "Today"},
-        endDate: {type: String, required: true, default: "Today"},
-        startTime: {type: String, required: true, default: "Now"},
-        endTime: {type: String, required: true, default: "+1 Hour"}
+        startDate: {
+            type: String, 
+            required: true,
+            enum: ["Today", "Tomorrow", "Next Week"], 
+            default: "Today",
+        },
+        endDate: {
+            type: String, 
+            required: true, 
+            enum: ["Today", "Tomorrow", "Next Week"], 
+            default: "Today"
+        },
+        startTime: {
+            type: String, 
+            required: true, 
+            enum: ["Now", "+15 Minutes", "+30 Minutes", "+45 Minutes", "+1 Hour", "+2 Hours", "+3 Hours", "+4 Hours", "+5 Hours", "+6 Hours"], 
+            default: "Now"
+        },
+        endTime: {
+            type: String, 
+            required: true, 
+            enum: ["+15 Minutes", "+30 Minutes", "+45 Minutes", "+1 Hour", "+2 Hours", "+3 Hours", "+4 Hours", "+5 Hours", "+6 Hours"], 
+            default: "+1 Hour"
+        }
     },
     recurring: {
         isIt: {type: Boolean, required: true, default: false},
