@@ -12,10 +12,10 @@ const EventSchema = new Schema({
     },
     allDay: {
         isIt: {type: Boolean, requied: true},
-        startDate: {type: Date, required: true},
-        endDate: {type: Date, required: true},
-        startTime: {type: Date},
-        endTime: {type: Date}
+        startDate: {type: String, required: true},
+        endDate: {type: String, required: true},
+        startTime: {type: String},
+        endTime: {type: String}
     },
     recurring: {
         isIt: {type: Boolean, required: true},
@@ -23,8 +23,8 @@ const EventSchema = new Schema({
         everyUnit: {type: String},
         dateRange: {
             isIt: {type: Boolean},
-            start: {type: Date},
-            end: {type: Date},
+            start: {type: String},
+            end: {type: String},
             numTimesRecur: {type: Number}
         },
         eventIds: [{type: Schema.Types.ObjectId, ref: 'Event'}]
