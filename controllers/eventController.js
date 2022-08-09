@@ -58,7 +58,7 @@ export default class EventController {
     static async UpdateEventInfo(req, res) {
         try {
             const userId = req.session.userId;
-            const fieldsToUpdate = req.body.fieldsToUpdate;
+            const fieldsToUpdate = req.body;
             const eventId = req.params.eventId;
             let canEdit = false;
 
@@ -81,9 +81,6 @@ export default class EventController {
             }
 
             if (canEdit == true) {
-                // Update the lastUpdated field
-                fieldsToUpdate["lastUpdated"] = new Date();
-    
                 // Update the event document by eventId
                 await Event.updateOne({_id: eventId}, {$set: fieldsToUpdate});
     
