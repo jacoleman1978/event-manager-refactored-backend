@@ -284,22 +284,28 @@ export default class EventController {
         try {
             const userId = req.session.userId;
 
-            const userDoc = await User.findOne({_id: userId}).populate('eventIds').populate('groupEventIds');
+            const userDoc = await User.findOne({_id: userId}, {eventIds: 1, groupEventIds: 1, task: 1});
 
-            let events = [];
             let eventIds = [];
 
             for (let event of userDoc.eventIds) {
-                if (event.task.isIt === false) {
-                    events.push(event);
-                    eventIds.push(event._id.toString());
-                }
+                eventIds = [...eventIds, event._id.toString()]
             }
 
             for (let event of userDoc.groupEventIds) {
-                if (event.task.isIt === false && eventIds.indexOf(event._id.toString()) === -1) {
-                    events.push(event);
-                }
+                eventIds = [...eventIds, event._id.toString()]
+            }
+
+            eventIds = new Set([...eventIds])
+
+            let events = []
+
+            for (let eventId of eventIds) {
+                let eventDoc = await Event.findOne({_id: eventId}).populate('groupIds').populate('editorIds').populate('viewerIds').populate('ownerId');
+
+                if (eventDoc.task.isIt === false) {
+                    events = [...events, eventDoc]
+                } 
             }
 
             res.json({events: events});
