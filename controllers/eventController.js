@@ -284,11 +284,25 @@ export default class EventController {
         try {
             const userId = req.session.userId;
 
-            const userDoc = await User.findOne({_id: userId}, {eventIds: 1, groupEventIds: 1}).populate('eventIds').populate('groupEventIds');
+            const userDoc = await User.findOne({_id: userId}).populate('eventIds').populate('groupEventIds');
 
-            const events = new Set([...userDoc.eventIds, ...userDoc.groupEventIds]);
+            let events = [];
+            let eventIds = [];
 
-            res.json({events: [...events]});
+            for (let event of userDoc.eventIds) {
+                if (event.task.isIt === false) {
+                    events.push(event);
+                    eventIds.push(event._id.toString());
+                }
+            }
+
+            for (let event of userDoc.groupEventIds) {
+                if (event.task.isIt === false && eventIds.indexOf(event._id.toString()) === -1) {
+                    events.push(event);
+                }
+            }
+
+            res.json({events: events});
         } catch(error) {
             res.status(500).json({error: error.message});
         }
