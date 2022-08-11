@@ -349,7 +349,7 @@ export default class EventController {
         try {
             const userId = req.session.userId;
 
-            const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}]}).populate('editorIds').populate('viewerIds').populate('groupIds').populate('tagIds');
+            const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}]}).populate('editorIds').populate('viewerIds').populate('groupIds').populate('tagIds').populate('ownerId');
 
             res.json({tasks: [...taskDocs]});
         } catch(error) {
