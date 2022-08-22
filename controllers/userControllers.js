@@ -160,7 +160,8 @@ export default class UserController {
 
             let data = {
                 userName: user.userName,
-                userId: user._id
+                userId: user._id,
+                fullName: `${user.firstName} ${user.lastName}`
             }
             res.json(data);
 
