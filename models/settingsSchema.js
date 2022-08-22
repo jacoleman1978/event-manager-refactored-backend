@@ -7,7 +7,7 @@ const SettingsSchema = new Schema({
         events: {
             type: String, 
             required: true,
-            enum: ["By Day", "By List", "By Overview"],
+            enum: ["By Day", "By List", "By Week"],
             default: "By Day"
         },
         tasks: {
