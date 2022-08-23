@@ -20,7 +20,7 @@ const SettingsSchema = new Schema({
             type: String, 
             required: true,
             enum: ["Events", "Tasks", "Groups", "Settings"],
-            default: "Events"
+            default: "Settings"
         },
         startOfWeek: {
             type: String, 
