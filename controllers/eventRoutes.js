@@ -10,6 +10,9 @@ eventRouter.route('/tasks').get(EventController.GetTasks);
 // Get all events for a user
 eventRouter.route('/all').get(EventController.GetEvents);
 
+// Get all user events and group events for a user
+eventRouter.route('/userGroupEvents').get(EventController.GetUserGroupsEvents);
+
 // Create new event
 eventRouter.route('/new').post(EventController.AddEvent);
 

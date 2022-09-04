@@ -314,6 +314,54 @@ export default class EventController {
         }
     }
 
+    static async GetUserGroupsEvents(req, res) {
+        try {
+            const userId = req.session.userId;
+
+            const userDoc = await User.findOne({_id: userId});
+
+            let events = {groups: {}};
+
+            events[userDoc._id] = {
+                events: [],
+                userName: userDoc.userName,
+                userId: userDoc._id,
+                fullName: `${userDoc.firstName} ${userDoc.lastName}`
+            }
+
+            for (let eventId of userDoc.eventIds) {
+                let eventDoc = await Event.findOne({_id: eventId}).populate('groupIds').populate('editorIds').populate('viewerIds').populate('ownerId');
+
+                if (eventDoc.task.isIt === false && eventDoc.groupIds.length === 0) {
+                    events[userDoc._id].events = [...events[userDoc._id].events, eventDoc];
+                } 
+            }
+
+            for (let groupId of userDoc.groupIds) {
+                let groupDoc = await Group.findOne({_id: groupId}, {name: 1, eventIds: 1});
+
+                events.groups[groupId] = {
+                    events: [],
+                    groupName: groupDoc.name,
+                    groupId: groupId
+                }
+
+                for (let groupEventId of groupDoc.eventIds) {
+                    let groupEventDoc = await Event.findOne({_id: groupEventId}).populate('groupIds').populate('editorIds').populate('viewerIds').populate('ownerId');
+
+                    if (groupEventDoc.task.isIt === false) {
+                        events.groups[groupId].events = [...events.groups[groupId].events, groupEventDoc];
+                    } 
+                }
+            }
+
+            res.json({events: events});
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
     static async GetEventById(req, res) {
         try {
             const eventId = req.params.eventId;

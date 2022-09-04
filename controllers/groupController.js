@@ -18,12 +18,7 @@ export default class GroupController {
             const groupDoc = await Group.create(newGroup);
 
             // Add group to owner's user account
-            await User.updateOne({_id: ownerId}, {$set: {groupIds: groupDoc._id}});
-
-            // // Add group to invitees user account
-            // for (let userId of newGroup.inviteeIds) {
-            //     await User.updateOne({_id: userId}, {$addToSet: {groupInviteIds: groupDoc._id}})
-            // }
+            await User.updateOne({_id: ownerId}, {$addToSet: {groupIds: groupDoc._id}});
 
             res.json({message: "Created new group"})
 
