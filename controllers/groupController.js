@@ -263,7 +263,7 @@ export default class GroupController {
     static async DeleteGroup(req, res) {
         try {
             const groupId = req.params.groupId;
-            const userId = req.body.userId;
+            const userId = req.session.userId;
 
             const groupDoc = await Group.findOne({_id: groupId});
 
