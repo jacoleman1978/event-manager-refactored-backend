@@ -128,15 +128,31 @@ export default class EventController {
                     const groupDoc = await Group.findOne({_id: groupIdToAdd});
 
                     // Create new Sets of editorIds and viewerIds from current event and new group added
-                    const eventEditors = new Set([groupDoc.ownerId, ...groupDoc.editorIds, ...eventDoc.editorIds]);
+                    const groupEditorIds = groupDoc.editorIds.map((editorId) => {
+                        return editorId.toString()
+                    })
 
-                    const eventViewers = new Set([...groupDoc.viewerIds, ...eventDoc.viewerIds]);
+                    const eventEditorIds = eventDoc.editorIds.map((editorId) => {
+                        return editorId.toString()
+                    })
+
+                    const eventEditors = new Set([groupDoc.ownerId, ...groupEditorIds, ...eventEditorIds]);
+
+                    const groupViewerIds = groupDoc.viewerIds.map((viewerId) => {
+                        return viewerId.toString()
+                    })
+
+                    const eventViewerIds = eventDoc.viewerIds.map((viewerId) => {
+                        return viewerId.toString()
+                    })
+
+                    const eventViewers = new Set([...groupViewerIds, ...eventViewerIds]);
 
                     // Add groupId to event document and set the editorIds and viewerIds with the new Sets
                     await Event.updateOne({_id: eventId}, {$addToSet: {groupIds: groupIdToAdd}, $set: {editorIds: [...eventEditors], viewerIds: [...eventViewers]}});
 
                     // Add eventId to the group member's groupEventIds field of user's document
-                    const newUserIds = new Set([groupDoc.ownerId, ...groupDoc.editorIds, ...groupDoc.viewerIds]);
+                    const newUserIds = new Set([groupDoc.ownerId, ...groupEditorIds, ...groupViewerIds]);
 
                     for (let newUserId of newUserIds) {
                         await User.updateOne({_id: newUserId}, {$addToSet: {groupEventIds: eventId}});
