@@ -185,14 +185,14 @@ export default class UserController {
 
         try {
             if (firstName.length > 0 && lastName.length > 0) {
-                let bestMatch = await User.find({$and:[{firstName: firstName}, {lastName: lastName}]});
+                let bestMatch = await User.find({$and:[{firstName: {$regex: firstName, $options: 'i'}}, {lastName: {$regex: lastName, $options: 'i'}}]});
     
                 for (let i = 0; i < bestMatch.length; i++) {
                     usersFromSearch.add(bestMatch[i].userName)
                     results.push(bestMatch[i]);
                 };
     
-                let partialMatch = await User.find({$or:[{firstName: firstName}, {lastName: lastName}]});
+                let partialMatch = await User.find({$or:[{firstName: {$regex: firstName, $options: 'i'}}, {lastName: {$regex: lastName, $options: 'i'}}]});
     
                 for (let j = 0; j < partialMatch.length; j++) {
                     if (usersFromSearch.has(partialMatch[j].userName) === false) {
@@ -202,14 +202,14 @@ export default class UserController {
                 };
     
             } else if (firstName.length > 0) {
-                let matches = await User.find({firstName: firstName});
+                let matches = await User.find({firstName: {$regex: firstName, $options: 'i'}});
     
                 for (let i = 0; i < matches.length; i++) {
                     results.push(matches[i]);
                 };
     
             } else if (lastName.length > 0) {
-                let matches = await User.find({lastName: lastName});
+                let matches = await User.find({lastName: {$regex: lastName, $options: 'i'}});
     
                 for (let i = 0; i < matches.length; i++) {
                     results.push(matches[i]);
