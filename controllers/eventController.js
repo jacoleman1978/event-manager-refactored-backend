@@ -413,9 +413,52 @@ export default class EventController {
         try {
             const userId = req.session.userId;
 
-            const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}]}).populate('editorIds').populate('viewerIds').populate('groupIds').populate('tagIds').populate('ownerId');
+            const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}, {"task.taskCompleted": {$ne: true}}]}).populate('editorIds').populate('viewerIds').populate('groupIds').populate('tagIds').populate('ownerId');
 
             res.json({tasks: [...taskDocs]});
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    static async CompleteTask(req,res) {
+        try {
+            const userId = req.session.userId;
+            const eventId = req.params.eventId;
+
+            const taskDoc = await Event.findOne({_id: eventId});
+
+            if (taskDoc.ownerId.toString() === userId) {
+                const updatedDoc = {
+                    task: {
+                        isIt: true,
+                        priority: "Low",
+                        taskCompleted: true,
+                        dateCompleted: new Date()
+                    },
+                    lastUpdated: new Date()
+                }
+
+                await Event.updateOne({_id: eventId}, {$set: updatedDoc});
+
+                return res.json({message: "Successfully completed task"})
+            } else {
+                return res.json({message: "You are not the owner"})
+            }
+
+        } catch(error) {
+            res.status(500).json({error: error.message});
+        }
+    }
+
+    static async GetCompletedTasks(req, res) {
+        try {
+            const userId = req.session.userId;
+
+            const taskDocs = await Event.find({$and: [{ownerId: userId}, {"task.isIt": true}, {"task.taskCompleted": true}]});
+
+            res.json({tasks: [...taskDocs]});
+
         } catch(error) {
             res.status(500).json({error: error.message});
         }

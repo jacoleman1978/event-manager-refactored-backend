@@ -34,4 +34,10 @@ eventRouter.route('/').get(EventController.GetEvents);
 // Get event by eventId
 eventRouter.route('/:eventId').get(EventController.GetEventById);
 
+// Get completed tasks
+eventRouter.route('/tasks/completed').get(EventController.GetCompletedTasks);
+
+// Complete the task
+eventRouter.route('/:eventId/complete').put(EventController.CompleteTask);
+
 export default eventRouter;
