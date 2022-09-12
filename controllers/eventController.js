@@ -3,8 +3,8 @@ import User from '../models/userSchema.js';
 import Group from '../models/groupSchema.js';
 
 export default class EventController {
+    // Make the newEvent object
     static async AddEvent(req, res) {
-        // Make the newEvent object
         const newEvent = req.body;
         newEvent["ownerId"] = req.session.userId;
 
@@ -55,6 +55,7 @@ export default class EventController {
         }
     }
 
+    // Users with edit privilege can update fields in and event or task
     static async UpdateEventInfo(req, res) {
         try {
             const userId = req.session.userId;
@@ -98,6 +99,7 @@ export default class EventController {
         }
     }
 
+    // The owner of an event can assign a group to the event
     static async AddAssignedGroup(req, res) {
         try {
             const eventId = req.params.eventId;
@@ -174,6 +176,7 @@ export default class EventController {
         }
     }
 
+    // The owner of a group can remove a group from the event
     static async RemoveAssignedGroup(req, res) {
         try {
             const eventId = req.params.eventId;
@@ -256,6 +259,7 @@ export default class EventController {
         }
     }
 
+    // The owner of an event can delete the event
     static async DeleteEvent(req, res) {
         try {
             const userId = req.session.userId;
@@ -296,6 +300,7 @@ export default class EventController {
         }
     }
 
+    // Gets all events associated with the current user
     static async GetEvents(req, res) {
         try {
             const userId = req.session.userId;
@@ -304,6 +309,7 @@ export default class EventController {
 
             let eventIds = [];
 
+            // Get the ids as strings for all events in the user document, removing duplicates
             for (let event of userDoc.eventIds) {
                 eventIds = [...eventIds, event._id.toString()]
             }
@@ -316,6 +322,7 @@ export default class EventController {
 
             let events = []
 
+            // Get the event documents to return
             for (let eventId of eventIds) {
                 let eventDoc = await Event.findOne({_id: eventId}).populate('groupIds').populate('editorIds').populate('viewerIds').populate('ownerId');
 
@@ -330,6 +337,7 @@ export default class EventController {
         }
     }
 
+    // Returns an object that sorts events associated with a user into personal events and individual group events
     static async GetUserGroupsEvents(req, res) {
         try {
             const userId = req.session.userId;
@@ -345,6 +353,7 @@ export default class EventController {
                 fullName: `${userDoc.firstName} ${userDoc.lastName}`
             }
 
+            // Get all personal events for a user
             for (let eventId of userDoc.eventIds) {
                 let eventDoc = await Event.findOne({_id: eventId}).populate('groupIds').populate('editorIds').populate('viewerIds').populate('ownerId');
 
@@ -353,6 +362,7 @@ export default class EventController {
                 } 
             }
 
+            // Get all groups for a user with their associated group name and eventIds
             for (let groupId of userDoc.groupIds) {
                 let groupDoc = await Group.findOne({_id: groupId}, {name: 1, eventIds: 1});
 
@@ -362,6 +372,7 @@ export default class EventController {
                     groupId: groupId
                 }
 
+                // Populate group events and add to the events object
                 for (let groupEventId of groupDoc.eventIds) {
                     let groupEventDoc = await Event.findOne({_id: groupEventId}).populate('groupIds').populate('editorIds').populate('viewerIds').populate('ownerId');
 
@@ -378,6 +389,7 @@ export default class EventController {
         }
     }
 
+    // Return an individual event document, if the current user is associated with the event
     static async GetEventById(req, res) {
         try {
             const eventId = req.params.eventId;
@@ -387,8 +399,11 @@ export default class EventController {
 
             const eventDoc = await Event.findOne({_id: eventId});
 
+            // Make a set of all userIds associated with an event
             const eventUserList = new Set([eventDoc.ownerId, ...eventDoc.editorIds, ...eventDoc.viewerIds]);
 
+            // Check if the current user is associated with the event
+            // If they are, return the eventDoc, otherwise return null
             for (let eventUserId of eventUserList) {
                 if (userId == eventUserId) {
                     validUser = true;
@@ -409,6 +424,7 @@ export default class EventController {
         }
     }
 
+    // Get and return all taks for the current user that are not completed
     static async GetTasks(req, res) {
         try {
             const userId = req.session.userId;
@@ -421,6 +437,7 @@ export default class EventController {
         }
     }
 
+    // The owner of a task can complete the task
     static async CompleteTask(req,res) {
         try {
             const userId = req.session.userId;
@@ -428,6 +445,7 @@ export default class EventController {
 
             const taskDoc = await Event.findOne({_id: eventId});
 
+            // If the current user is the owner of the task, set the fields to complete it
             if (taskDoc.ownerId.toString() === userId) {
                 const updatedDoc = {
                     task: {
@@ -451,6 +469,7 @@ export default class EventController {
         }
     }
 
+    // Gets all task for the current user that have been marked completed
     static async GetCompletedTasks(req, res) {
         try {
             const userId = req.session.userId;
