@@ -3,7 +3,7 @@ import Settings from '../models/settingsSchema.js';
 import { compare, genSalt, hash } from 'bcrypt';
 
 export default class UserController {
-    // Get user info via POST
+    // Get user info after verifying credentials
     static async Login(req, res) {
         const body = req.body;
 
@@ -49,7 +49,7 @@ export default class UserController {
         }
     }
 
-    // Create new user via POST
+    // Create new user document
     static async Signup(req, res) {
         const body = req.body;
 
@@ -152,7 +152,7 @@ export default class UserController {
         }
     }
 
-    // Check session
+    // Check if the current user session exists and return it
     static async CheckSession(req, res) {
         try {
             // Search for userId in database
@@ -176,7 +176,7 @@ export default class UserController {
         res.json({message: "Logged out"});
     }
 
-    // Search for user by first and last name
+    // Search for user by first and last name with partial matches possible
     static async SearchUser(req, res) {
         const firstName = req.body.firstName || '';
         const lastName = req.body.lastName || '';
@@ -223,6 +223,7 @@ export default class UserController {
         }
     }
 
+    // Authenticate current user and change their password
     static async ChangePassword(req, res) {
         const userId = req.session.userId;
         const currentPwd = req.body.currentPwd;
