@@ -27,7 +27,7 @@ export default class GroupController {
         }
     }
 
-    // Invite new member to group
+    // The owner of a group invites another user to the group
     static async InviteMember(req, res) {
         try {
             const groupId = req.body.groupId;
@@ -73,7 +73,7 @@ export default class GroupController {
         }
     }
 
-    // Remove member from group
+    // The owner of a group removes member from group
     static async RemoveMember(req, res) {
         try {
             const groupId = req.body.groupId;
@@ -181,7 +181,7 @@ export default class GroupController {
         }
     }
 
-    // Change member type
+    // The owner of a group can change a member's privilege between "Editor" and "Viewer"
     static async ChangeEditPrivilege(req, res) {
         try {
             const userId = req.session.userId;
@@ -229,7 +229,7 @@ export default class GroupController {
         }
     }
 
-    // Change group name
+    // The owner of a group changes the group name
     static async ChangeGroupName(req, res) {
         try {
             const userId = req.session.userId;
@@ -260,6 +260,7 @@ export default class GroupController {
         }
     }
 
+    // The owner of a group deletes the group
     static async DeleteGroup(req, res) {
         try {
             const groupId = req.params.groupId;
@@ -330,7 +331,7 @@ export default class GroupController {
         }
     }
 
-    // Get group document by groupId
+    // Get group document by groupId if the current user is the owner
     static async GetGroupById(req, res) {
         try {
             const userId = req.session.userId;
