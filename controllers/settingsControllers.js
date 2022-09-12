@@ -1,7 +1,7 @@
 import Settings from '../models/settingsSchema.js';
 
 export default class SettingsController {
-    // Get settings info via GET
+    // Get the current user's settings
     static async GetSettings(req, res) {
         try {
             const userId = req.session.userId;
@@ -18,7 +18,7 @@ export default class SettingsController {
         }
     }
     
-    // Create new settings file
+    // Update the current user's settings
     static async CustomizeSettings(req, res) {
         try {
             const userId = req.session.userId;
