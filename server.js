@@ -15,16 +15,20 @@ const app = express();
 // Middleware/Config
 config();
 
+app.set('trust proxy', 1)
+
 app.use(cookieSession({
     name: 'session',
-    sameSite: 'strict',
+    sameSite: 'none',
     keys: [process.env.SESSION_SECRET],
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours in ms
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours in ms
+    secure: true
 }));
 app.use(cors({
     origin: `http://localhost:3000`,
     credentials: true
 }));
+
 app.use(json());
 
 // Routes
