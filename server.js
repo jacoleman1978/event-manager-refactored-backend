@@ -25,7 +25,7 @@ app.use(cookieSession({
     secure: true
 }));
 app.use(cors({
-    origin: `http://localhost:3000`,
+    origin: process.env.FRONTEND_APP_URL,
     credentials: true
 }));
 
